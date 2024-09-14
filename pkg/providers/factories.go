@@ -8,6 +8,7 @@ import (
 	"identity-server/pkg/providers/database"
 	postgresDb "identity-server/pkg/providers/database/postgres"
 	"identity-server/pkg/providers/hashing"
+	"identity-server/pkg/providers/time"
 )
 
 func CreateDatabase(config *config.AppConfig) (database.Database, error) {
@@ -26,6 +27,10 @@ func CreateHasher(config *config.AppConfig) (hashing.Hasher, error) {
 	default:
 		return nil, fmt.Errorf("unsupported hashing algorithm: %s", config.Hashing.Algorithm)
 	}
+}
+
+func CreateDefaultTimeProvider() time.Provider {
+	return &time.DefaultTimeProvider{}
 }
 
 func CreateAccountManager(db database.Database) (accounts.AccountManager, error) {
