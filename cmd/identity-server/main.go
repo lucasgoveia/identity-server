@@ -11,16 +11,17 @@ import (
 )
 
 func main() {
+	e := echo.New()
+
 	if err := godotenv.Load(); err != nil {
-		log.Printf("Error loading .env file: %v", err)
+		e.Logger.Debug("Error loading .env file: %v", err)
 	}
 
 	appConfig, err := config.LoadConfig()
 
-	e := echo.New()
-
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.CORS())
 
 	db, err := providers.CreateDatabase(appConfig)
 
