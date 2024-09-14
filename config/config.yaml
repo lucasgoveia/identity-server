@@ -1,0 +1,12 @@
+server:
+  port: 1323
+  host: "localhost"
+
+database:
+  provider: "postgres"
+
+hashing:
+  algorithm: "argon2"
+
+postgres:
+    url: "postgres://postgres:password@localhost:5432/identity-server"
