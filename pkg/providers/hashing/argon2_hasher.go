@@ -47,6 +47,18 @@ func (h *Argon2Hasher) Hash(text string, o ...interface{}) (string, error) {
 		}
 	}
 
+	if options.Iterations < 1 {
+		return "", errors.New("number of iterations must be greater than zero")
+	}
+
+	if options.Parallelism < 1 {
+		return "", errors.New("parallelism must be greater than zero")
+	}
+
+	if options.Memory < 8*1024 {
+		return "", errors.New("memory must be at least 8mb")
+	}
+
 	salt, err := generateRandomBytes(options.SaltLength)
 	if err != nil {
 		return "", err
