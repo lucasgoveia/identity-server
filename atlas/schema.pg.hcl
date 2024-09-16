@@ -65,17 +65,17 @@ table "user_identities" {
   schema = schema.public
   column "id" {
     null = false
-    type = bigint
+    type = char(26)
   }
   column "user_id" {
     null = false
     type = char(26)
   }
-  column "identity_type" {
+  column "type" {
     null = false
     type = enum.identity_type // e.g., email, phone, social, sso, passkey
   }
-  column "identity_value" {
+  column "value" {
     null = true
     type = varchar(256) // For email, phone number, provider ID, etc.
   }
@@ -112,10 +112,14 @@ table "user_identities" {
     ref_columns = [table.users.column.id]
   }
   index "user_identities_identity_type_idx" {
-    columns = [column.identity_type]
+    columns = [column.type]
   }
   index "user_identities_user_identity_type_idx" {
-    columns = [column.user_id, column.identity_type]
+    columns = [column.user_id, column.type]
+  }
+
+  unique "unique_identity_per_type" {
+    columns = [column.type, column.value]
   }
 }
 

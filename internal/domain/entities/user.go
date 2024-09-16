@@ -6,21 +6,21 @@ import (
 )
 
 type User struct {
-	Id        ulid.ULID
-	Name      string
-	AvatarUrl *string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time
+	Id         ulid.ULID
+	Name       string
+	AvatarLink *string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	DeletedAt  *time.Time
 }
 
 func NewUser(id ulid.ULID, name string, avatarUrl *string, createdAt time.Time, updatedAt time.Time) *User {
 	return &User{
-		Id:        id,
-		Name:      name,
-		AvatarUrl: avatarUrl,
-		CreatedAt: createdAt,
-		UpdatedAt: updatedAt,
-		DeletedAt: nil,
+		Id:         id,
+		Name:       name,
+		AvatarLink: avatarUrl,
+		CreatedAt:  createdAt,
+		UpdatedAt:  updatedAt,
+		DeletedAt:  nil,
 	}
 }

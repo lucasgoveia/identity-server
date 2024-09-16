@@ -13,8 +13,8 @@ CREATE TABLE "public"."users" ("id" character(26) NOT NULL, "name" character var
 -- Create index "users_id_access_failed_count_idx" to table: "users"
 CREATE INDEX "users_id_access_failed_count_idx" ON "public"."users" ("id", "access_failed_count");
 -- Create "user_identities" table
-CREATE TABLE "public"."user_identities" ("id" bigint NOT NULL, "user_id" character(26) NOT NULL, "identity_type" "public"."identity_type" NOT NULL, "identity_value" character varying(256) NULL, "credential" character varying(512) NULL, "provider" character varying(100) NULL, "verified" boolean NOT NULL DEFAULT false, "created_at" timestamp NOT NULL, "updated_at" timestamp NOT NULL, "deleted_at" timestamp NULL, PRIMARY KEY ("id"), CONSTRAINT "user_identities_user_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION);
+CREATE TABLE "public"."user_identities" ("id" character(26) NOT NULL, "user_id" character(26) NOT NULL, "type" "public"."identity_type" NOT NULL, "value" character varying(256) NULL, "credential" character varying(512) NULL, "provider" character varying(100) NULL, "verified" boolean NOT NULL DEFAULT false, "created_at" timestamp NOT NULL, "updated_at" timestamp NOT NULL, "deleted_at" timestamp NULL, PRIMARY KEY ("id"), CONSTRAINT "unique_identity_per_type" UNIQUE ("type", "value"), CONSTRAINT "user_identities_user_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION);
 -- Create index "user_identities_identity_type_idx" to table: "user_identities"
-CREATE INDEX "user_identities_identity_type_idx" ON "public"."user_identities" ("identity_type");
+CREATE INDEX "user_identities_identity_type_idx" ON "public"."user_identities" ("type");
 -- Create index "user_identities_user_identity_type_idx" to table: "user_identities"
-CREATE INDEX "user_identities_user_identity_type_idx" ON "public"."user_identities" ("user_id", "identity_type");
+CREATE INDEX "user_identities_user_identity_type_idx" ON "public"."user_identities" ("user_id", "type");

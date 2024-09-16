@@ -41,7 +41,7 @@ func main() {
 
 	// TODO: Change: instead of using hasher directly, create an wrapper for password hashing
 	// because, for example, totp secret does not have the same security requirements as password
-	e.POST("/signup/email", email.SignUp(accountManager, timeProvider, hasher))
+	e.POST("/sign-up/email", email.SignUp(accountManager, timeProvider, hasher))
 
 	e.Logger.Fatal(e.Start(":1323"))
 }

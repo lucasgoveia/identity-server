@@ -32,6 +32,9 @@ func SignUp(accManager accounts.AccountManager, timeProvider time.Provider, hash
 		identity := entities.NewEmailIdentity(ulid.Make(), user.Id, req.Email, hashedPassword, timeProvider.Now(), timeProvider.Now())
 
 		if err := accManager.Save(user, identity); err != nil {
+			if err.Error() == "duplicated email" {
+				return c.JSON(http.StatusBadRequest, err)
+			}
 			return c.JSON(http.StatusInternalServerError, err)
 		}
 
