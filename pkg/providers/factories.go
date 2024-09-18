@@ -8,6 +8,7 @@ import (
 	"identity-server/pkg/providers/database"
 	postgresDb "identity-server/pkg/providers/database/postgres"
 	"identity-server/pkg/providers/hashing"
+	"identity-server/pkg/providers/messaging"
 	"identity-server/pkg/providers/time"
 )
 
@@ -40,4 +41,9 @@ func CreateAccountManager(db database.Database) (accounts.AccountManager, error)
 	default:
 		return nil, fmt.Errorf("unsupported database provider: %s", db.GetProviderType())
 	}
+}
+
+func CreateMessageBus() messaging.MessageBus {
+
+	return &messaging.InMemoryMessageBus{}
 }

@@ -66,3 +66,13 @@ func (r *AccountManager) Save(user *entities.User, identity *entities.Identity) 
 
 	return nil
 }
+
+func (r *AccountManager) IdentityExists(identityType string, value string) (bool, error) {
+	var exists bool
+	err := r.db.Db.QueryRow("SELECT EXISTS(select 1 from user_identities where type = $1 and value = $2)", identityType, value).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}

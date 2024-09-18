@@ -33,7 +33,7 @@ func NewArgon2HasherParams(memory uint32, iterations uint32, parallelism uint8, 
 
 func (h *Argon2Hasher) Hash(text string, o ...interface{}) (string, error) {
 	options := &Argon2HasherOptions{
-		Memory:      64 * 1024, // Default memory
+		Memory:      12 * 1024, // Default memory
 		Iterations:  3,         // Default iterations
 		Parallelism: 2,         // Default parallelism
 		SaltLength:  16,        // Default salt length
