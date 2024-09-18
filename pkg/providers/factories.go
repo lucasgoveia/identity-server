@@ -45,5 +45,5 @@ func CreateAccountManager(db database.Database) (accounts.AccountManager, error)
 
 func CreateMessageBus() messaging.MessageBus {
 
-	return &messaging.InMemoryMessageBus{}
+	return messaging.NewInMemoryMessageBus()
 }

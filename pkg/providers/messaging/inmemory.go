@@ -5,12 +5,76 @@ import (
 	"reflect"
 )
 
-type InMemoryMessageBus struct {
+type ConsumerFunc func(interface{})
+
+type Consumer interface {
+	Handle(interface{})
 }
 
-func (*InMemoryMessageBus) Publish(message interface{}) {
+type InMemoryMessageBus struct {
+	consumers    map[string]ConsumerFunc
+	messageQueue chan Message
+}
+
+func NewInMemoryMessageBus() *InMemoryMessageBus {
+	return &InMemoryMessageBus{
+		consumers:    make(map[string]ConsumerFunc),
+		messageQueue: make(chan Message),
+	}
+}
+
+// Register a map of consumer names to functions
+
+// Message struct with routing key and payload
+type Message struct {
+	RoutingKey string
+	Body       interface{}
+}
+
+func (b *InMemoryMessageBus) Publish(message interface{}) {
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync()
+	routingKey := reflect.TypeOf(message).String()
 	logger.Info("Received message",
-		zap.String("type", reflect.TypeOf(message).String()))
+		zap.String("type", routingKey))
+
+	b.messageQueue <- Message{RoutingKey: routingKey, Body: message}
+}
+
+func (b *InMemoryMessageBus) RegisterConsumer(messageType reflect.Type, consumer ConsumerFunc) {
+	logger, _ := zap.NewDevelopment()
+	defer logger.Sync()
+	sugar := logger.Sugar()
+	routingKey := messageType.String()
+	sugar.Infof("Registering consumer for %s", routingKey)
+	b.consumers[routingKey] = consumer
+}
+
+func (b *InMemoryMessageBus) routeMessage(msg Message) {
+	logger, _ := zap.NewDevelopment()
+	defer logger.Sync()
+	sugar := logger.Sugar()
+	consumerFunc, ok := b.consumers[msg.RoutingKey]
+	if ok {
+		consumerFunc(msg.Body)
+	} else {
+		sugar.Errorf("No consumer registered for %s", msg.RoutingKey)
+	}
+}
+
+func (b *InMemoryMessageBus) Start() {
+	go func() {
+		for msg := range b.messageQueue {
+			if consumer, ok := b.consumers[msg.RoutingKey]; ok {
+				consumer(msg.Body)
+			}
+		}
+	}()
+}
+
+func (b *InMemoryMessageBus) Stop() {
+	logger, _ := zap.NewDevelopment()
+	defer logger.Sync()
+	logger.Info("Stopping in memory message bus")
+	close(b.messageQueue)
 }
