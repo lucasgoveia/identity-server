@@ -4,10 +4,14 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"go.uber.org/zap"
 	"identity-server/config"
 	"identity-server/features/signup/email"
+	"identity-server/internal/cache"
 	"identity-server/internal/consumers"
+	"identity-server/internal/mailing"
 	"identity-server/internal/messages/commands"
+	"identity-server/internal/security"
 	"identity-server/pkg/providers"
 	"log"
 	"os"
@@ -19,13 +23,19 @@ import (
 func main() {
 	e := echo.New()
 
+	// todo: we should probably not pass arround zap, maybe create a wrapper with less methods
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync()
+
 	if err := godotenv.Load(); err != nil {
 		e.Logger.Debug("Error loading .env file: %v", err)
 	}
 
 	appConfig, err := config.LoadConfig()
 
-	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
@@ -45,9 +55,12 @@ func main() {
 	timeProvider := providers.CreateDefaultTimeProvider()
 	hasher, err := providers.CreateHasher(appConfig)
 
-	bus := providers.CreateMessageBus()
+	bus := providers.CreateMessageBus(logger)
 
-	consumer := consumers.SendVerificationEmailConsumer{}
+	consumer := consumers.NewSendVerificationEmailConsumer(security.NewOTPGenerator(security.NewSecureKeyGenerator()),
+		cache.NewInMemory(),
+		logger,
+		mailing.NewStub(logger))
 	bus.RegisterConsumer(reflect.TypeOf(commands.SendVerificationEmail{}), consumer.Handle)
 
 	bus.Start()
@@ -59,7 +72,7 @@ func main() {
 	go func() {
 		// Start the server
 		if err := e.Start(":1323"); err != nil {
-			log.Printf("Shutting down the server: %v", err)
+			logger.Sugar().Fatalf("Shutting down the server: %v", err)
 		}
 	}()
 

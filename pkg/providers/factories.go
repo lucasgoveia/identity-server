@@ -2,6 +2,7 @@ package providers
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 	"identity-server/config"
 	"identity-server/internal/app/accounts"
 	"identity-server/internal/database/postgres"
@@ -43,7 +44,7 @@ func CreateAccountManager(db database.Database) (accounts.AccountManager, error)
 	}
 }
 
-func CreateMessageBus() messaging.MessageBus {
+func CreateMessageBus(logger *zap.Logger) messaging.MessageBus {
 
-	return messaging.NewInMemoryMessageBus()
+	return messaging.NewInMemoryMessageBus(logger)
 }

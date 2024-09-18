@@ -14,12 +14,14 @@ type Consumer interface {
 type InMemoryMessageBus struct {
 	consumers    map[string]ConsumerFunc
 	messageQueue chan Message
+	logger       *zap.Logger
 }
 
-func NewInMemoryMessageBus() *InMemoryMessageBus {
+func NewInMemoryMessageBus(logger *zap.Logger) *InMemoryMessageBus {
 	return &InMemoryMessageBus{
 		consumers:    make(map[string]ConsumerFunc),
 		messageQueue: make(chan Message),
+		logger:       logger,
 	}
 }
 
@@ -32,10 +34,8 @@ type Message struct {
 }
 
 func (b *InMemoryMessageBus) Publish(message interface{}) {
-	logger, _ := zap.NewDevelopment()
-	defer logger.Sync()
 	routingKey := reflect.TypeOf(message).String()
-	logger.Info("Received message",
+	b.logger.Info("Received message",
 		zap.String("type", routingKey))
 
 	b.messageQueue <- Message{RoutingKey: routingKey, Body: message}

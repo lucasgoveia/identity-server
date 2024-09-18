@@ -12,14 +12,14 @@ import (
 )
 
 type SendVerificationEmailConsumer struct {
-	otpGen     security.OTPGenerator
+	otpGen     *security.OTPGenerator
 	cache      cache.Cache
 	logger     *zap.Logger
 	mailSender mailing.Sender
 }
 
-func NewSendVerificationEmailConsumer(otpGen security.OTPGenerator, cache cache.Cache, logger *zap.Logger) *SendVerificationEmailConsumer {
-	return &SendVerificationEmailConsumer{otpGen: otpGen, cache: cache, logger: logger}
+func NewSendVerificationEmailConsumer(otpGen *security.OTPGenerator, cache cache.Cache, logger *zap.Logger, sender mailing.Sender) *SendVerificationEmailConsumer {
+	return &SendVerificationEmailConsumer{otpGen: otpGen, cache: cache, logger: logger, mailSender: sender}
 }
 
 func buildOtpCacheKey(userId ulid.ULID, identityId ulid.ULID, email string) string {
