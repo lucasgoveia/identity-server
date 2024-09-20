@@ -23,11 +23,28 @@ type PostgresConfig struct {
 	URL string `mapstructure:"url"`
 }
 
+type SmtpConfig struct {
+	Host               string `mapstructure:"host"`
+	Port               int    `mapstructure:"port"`
+	Username           string `mapstructure:"username"`
+	Password           string `mapstructure:"password"`
+	From               string `mapstructure:"from"`
+	FromName           string `mapstructure:"from_name"`
+	TLS                bool   `mapstructure:"tls"`
+	DefaultCredentials bool   `mapstructure:"default_credentials"`
+}
+
+type MailerConfig struct {
+	Provider string `mapstructure:"provider"`
+}
+
 type AppConfig struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
 	Hashing  HashingConfig  `mapstructure:"hashing"`
 	Postgres PostgresConfig `mapstructure:"postgres"`
+	Mailer   MailerConfig   `mapstructure:"mailer"`
+	Smtp     SmtpConfig     `mapstructure:"smtp"`
 }
 
 func LoadConfig() (*AppConfig, error) {
@@ -41,6 +58,14 @@ func LoadConfig() (*AppConfig, error) {
 	_ = viper.BindEnv("server.port", "SERVER_PORT")
 	_ = viper.BindEnv("server.host", "SERVER_HOST")
 	_ = viper.BindEnv("postgres.url", "POSTGRES_URL")
+	_ = viper.BindEnv("smtp.host", "SMTP_HOST")
+	_ = viper.BindEnv("smtp.port", "SMTP_PORT")
+	_ = viper.BindEnv("smtp.username", "SMTP_USERNAME")
+	_ = viper.BindEnv("smtp.password", "SMTP_PASSWORD")
+	_ = viper.BindEnv("smtp.from", "SMTP_FROM")
+	_ = viper.BindEnv("smtp.from_name", "SMTP_FROM_NAME")
+	_ = viper.BindEnv("smtp.tls", "SMTP_TLS")
+	_ = viper.BindEnv("smtp.default_credentials", "SMTP_DEFAULT_CREDENTIALS")
 
 	viper.AutomaticEnv()
 

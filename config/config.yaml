@@ -10,3 +10,16 @@ hashing:
 
 postgres:
     url: "postgres://postgres:password@localhost:5432/identity-server"
+
+mailer:
+  provider: 'smtp'
+
+smtp:
+  host: "localhost"
+  port: 25
+  username: "guest"
+  password: "guest"
+  from: "no-reply@localhost"
+  from_name: "Identity Server"
+  tls: false
+  default_credentials: false

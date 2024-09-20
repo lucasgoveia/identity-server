@@ -6,6 +6,7 @@ import (
 	"identity-server/config"
 	"identity-server/internal/app/accounts"
 	"identity-server/internal/database/postgres"
+	"identity-server/internal/mailing"
 	"identity-server/pkg/providers/database"
 	postgresDb "identity-server/pkg/providers/database/postgres"
 	"identity-server/pkg/providers/hashing"
@@ -47,4 +48,13 @@ func CreateAccountManager(db database.Database) (accounts.AccountManager, error)
 func CreateMessageBus(logger *zap.Logger) messaging.MessageBus {
 
 	return messaging.NewInMemoryMessageBus(logger)
+}
+
+func CreateMailSender(config *config.AppConfig, logger *zap.Logger) mailing.Sender {
+	switch config.Mailer.Provider {
+	case "smtp":
+		return mailing.NewSmtpSender(&config.Smtp, logger)
+	default:
+		return mailing.NewStubSender(logger)
+	}
 }

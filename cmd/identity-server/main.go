@@ -9,7 +9,6 @@ import (
 	"identity-server/features/signup/email"
 	"identity-server/internal/cache"
 	"identity-server/internal/consumers"
-	"identity-server/internal/mailing"
 	"identity-server/internal/messages/commands"
 	"identity-server/internal/security"
 	"identity-server/pkg/providers"
@@ -57,10 +56,12 @@ func main() {
 
 	bus := providers.CreateMessageBus(logger)
 
+	mailer := providers.CreateMailSender(appConfig, logger)
+
 	consumer := consumers.NewSendVerificationEmailConsumer(security.NewOTPGenerator(security.NewSecureKeyGenerator()),
 		cache.NewInMemory(),
 		logger,
-		mailing.NewStub(logger))
+		mailer)
 	bus.RegisterConsumer(reflect.TypeOf(commands.SendVerificationEmail{}), consumer.Handle)
 
 	bus.Start()

@@ -6,7 +6,7 @@ type StubSender struct {
 	logger *zap.Logger
 }
 
-func NewStub(logger *zap.Logger) *StubSender {
+func NewStubSender(logger *zap.Logger) *StubSender {
 
 	return &StubSender{
 		logger: logger,

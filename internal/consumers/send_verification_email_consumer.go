@@ -39,6 +39,7 @@ func (c *SendVerificationEmailConsumer) Handle(message interface{}) {
 
 	sendEmailVerificationMsg := message.(commands.SendVerificationEmail)
 
+	// TODO: hash the OTP before storing it in the cache and use TTL (needs to add config for TTL)
 	c.cache.Set(buildOtpCacheKey(sendEmailVerificationMsg.UserId, sendEmailVerificationMsg.IdentityId, sendEmailVerificationMsg.Email), otp)
 
 	// TODO: Use mjml for email templates
