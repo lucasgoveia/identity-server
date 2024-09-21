@@ -9,6 +9,7 @@ import (
 	"identity-server/internal/messages/commands"
 	"identity-server/internal/security"
 	"reflect"
+	"time"
 )
 
 type SendVerificationEmailConsumer struct {
@@ -39,8 +40,9 @@ func (c *SendVerificationEmailConsumer) Handle(message interface{}) {
 
 	sendEmailVerificationMsg := message.(commands.SendVerificationEmail)
 
+	cacheKey := buildOtpCacheKey(sendEmailVerificationMsg.UserId, sendEmailVerificationMsg.IdentityId, sendEmailVerificationMsg.Email)
 	// TODO: hash the OTP before storing it in the cache and use TTL (needs to add config for TTL)
-	c.cache.Set(buildOtpCacheKey(sendEmailVerificationMsg.UserId, sendEmailVerificationMsg.IdentityId, sendEmailVerificationMsg.Email), otp)
+	c.cache.Set(cacheKey, otp, time.Hour*1)
 
 	// TODO: Use mjml for email templates
 	err = c.mailSender.Send(sendEmailVerificationMsg.Email, "Email verification", fmt.Sprintf("Your verification code is: %s", otp))

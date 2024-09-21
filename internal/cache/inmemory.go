@@ -2,14 +2,15 @@ package cache
 
 import (
 	"github.com/dgraph-io/ristretto"
+	"time"
 )
 
 type InMemoryCache struct {
 	cache *ristretto.Cache[string, any]
 }
 
-func (i *InMemoryCache) Set(key string, value interface{}) {
-	i.cache.Set(key, value, 1)
+func (i *InMemoryCache) Set(key string, value interface{}, ttl time.Duration) {
+	i.cache.SetWithTTL(key, value, 1, ttl)
 	i.cache.Wait()
 }
 
@@ -17,12 +18,12 @@ func (i *InMemoryCache) Get(key string) (interface{}, bool) {
 	return i.cache.Get(key)
 }
 
-func (i *InMemoryCache) GetOrSet(key string, fetch func() interface{}) interface{} {
+func (i *InMemoryCache) GetOrSet(key string, fetch func() interface{}, ttl time.Duration) interface{} {
 	if value, found := i.Get(key); found {
 		return value
 	}
 	value := fetch()
-	i.Set(key, value)
+	i.Set(key, value, ttl)
 	return value
 }
 
