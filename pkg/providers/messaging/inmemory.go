@@ -42,18 +42,14 @@ func (b *InMemoryMessageBus) Publish(message interface{}) {
 }
 
 func (b *InMemoryMessageBus) RegisterConsumer(messageType reflect.Type, consumer ConsumerFunc) {
-	logger, _ := zap.NewDevelopment()
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := b.logger.Sugar()
 	routingKey := messageType.String()
 	sugar.Infof("Registering consumer for %s", routingKey)
 	b.consumers[routingKey] = consumer
 }
 
 func (b *InMemoryMessageBus) routeMessage(msg Message) {
-	logger, _ := zap.NewDevelopment()
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := b.logger.Sugar()
 	consumerFunc, ok := b.consumers[msg.RoutingKey]
 	if ok {
 		consumerFunc(msg.Body)
@@ -73,8 +69,6 @@ func (b *InMemoryMessageBus) Start() {
 }
 
 func (b *InMemoryMessageBus) Stop() {
-	logger, _ := zap.NewDevelopment()
-	defer logger.Sync()
-	logger.Info("Stopping in memory message bus")
+	b.logger.Info("Stopping in memory message bus")
 	close(b.messageQueue)
 }

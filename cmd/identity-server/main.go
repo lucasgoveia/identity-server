@@ -22,7 +22,7 @@ import (
 func main() {
 	e := echo.New()
 
-	// todo: we should probably not pass arround zap, maybe create a wrapper with less methods
+	// todo: we should probably not pass around zap, maybe create a wrapper with less methods
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
