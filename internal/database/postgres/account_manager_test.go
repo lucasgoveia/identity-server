@@ -143,4 +143,46 @@ func TestAccountManager_Save(t *testing.T) {
 		err = accountManager.Save(user, identity)
 		assert.Error(t, err, "Inserting user with error should return an error")
 	})
+
+}
+
+func TestAccountManager_IdentityExists(t *testing.T) {
+	db, teardown := setupTestDb(t)
+	defer teardown()
+
+	accountManager := am.NewAccountManager(&postgres.Db{Db: db})
+
+	t.Run("Identity exists", func(t *testing.T) {
+		// Create a user and identity first
+		userId := ulid.Make()
+		user := entities.NewUser(userId, "John Doe", nil, time.Now(), time.Now())
+
+		identityId := ulid.Make()
+		identity := entities.NewEmailIdentity(identityId, userId, "existing@example.com", "hashed-password", time.Now(), time.Now())
+
+		err := accountManager.Save(user, identity)
+		assert.NoError(t, err)
+
+		// Check if the identity exists
+		exists, err := accountManager.IdentityExists(string(identity.Type), identity.Value)
+		assert.NoError(t, err)
+		assert.True(t, exists, "Identity should exist")
+	})
+
+	t.Run("Identity does not exist", func(t *testing.T) {
+		// Check for a non-existing identity
+		exists, err := accountManager.IdentityExists("email", "nonexistent@example.com")
+		assert.NoError(t, err)
+		assert.False(t, exists, "Identity should not exist")
+	})
+
+	t.Run("Error in query execution", func(t *testing.T) {
+		// Simulate an error by dropping the `user_identities` table
+		_, err := db.Exec("DROP TABLE user_identities")
+		assert.NoError(t, err)
+
+		// Attempt to check for an identity, which should now fail
+		_, err = accountManager.IdentityExists("email", "error@example.com")
+		assert.Error(t, err, "Query execution should return an error")
+	})
 }
