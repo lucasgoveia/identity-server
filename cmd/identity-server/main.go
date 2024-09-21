@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 	"identity-server/config"
 	"identity-server/features/signup/email"
-	"identity-server/internal/cache"
 	"identity-server/internal/consumers"
 	"identity-server/internal/messages/commands"
 	"identity-server/internal/security"
@@ -58,8 +57,10 @@ func main() {
 
 	mailer := providers.CreateMailSender(appConfig, logger)
 
+	cache, err := providers.CreateCache(appConfig)
+
 	consumer := consumers.NewSendVerificationEmailConsumer(security.NewOTPGenerator(security.NewSecureKeyGenerator()),
-		cache.NewInMemory(),
+		cache,
 		logger,
 		mailer)
 	bus.RegisterConsumer(reflect.TypeOf(commands.SendVerificationEmail{}), consumer.Handle)

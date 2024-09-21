@@ -42,7 +42,11 @@ func (c *SendVerificationEmailConsumer) Handle(message interface{}) {
 
 	cacheKey := buildOtpCacheKey(sendEmailVerificationMsg.UserId, sendEmailVerificationMsg.IdentityId, sendEmailVerificationMsg.Email)
 	// TODO: hash the OTP before storing it in the cache and use TTL (needs to add config for TTL)
-	c.cache.Set(cacheKey, otp, time.Hour*1)
+	err = c.cache.Set(cacheKey, otp, time.Hour*1)
+
+	if err != nil {
+		c.logger.Error("Failed to set verification code to cache", zap.Error(err))
+	}
 
 	// TODO: Use mjml for email templates
 	err = c.mailSender.Send(sendEmailVerificationMsg.Email, "Email verification", fmt.Sprintf("Your verification code is: %s", otp))

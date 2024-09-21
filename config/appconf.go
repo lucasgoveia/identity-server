@@ -39,12 +39,24 @@ type MailerConfig struct {
 }
 
 type AppConfig struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Hashing  HashingConfig  `mapstructure:"hashing"`
-	Postgres PostgresConfig `mapstructure:"postgres"`
-	Mailer   MailerConfig   `mapstructure:"mailer"`
-	Smtp     SmtpConfig     `mapstructure:"smtp"`
+	Server   *ServerConfig   `mapstructure:"server"`
+	Database *DatabaseConfig `mapstructure:"database"`
+	Hashing  *HashingConfig  `mapstructure:"hashing"`
+	Postgres *PostgresConfig `mapstructure:"postgres"`
+	Mailer   *MailerConfig   `mapstructure:"mailer"`
+	Smtp     *SmtpConfig     `mapstructure:"smtp"`
+	Cache    *CacheConfig    `mapstructure:"cache"`
+	Redis    *RedisConfig    `mapstructure:"redis"`
+}
+
+type CacheConfig struct {
+	Provider string `mapstructure:"provider"`
+}
+
+type RedisConfig struct {
+	Url      string `mapstructure:"url"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
 }
 
 func LoadConfig() (*AppConfig, error) {
@@ -55,6 +67,7 @@ func LoadConfig() (*AppConfig, error) {
 
 	viper.SetDefault("server.port", 8080)
 	viper.SetDefault("server.host", "0.0.0.0")
+	viper.SetDefault("cache.provider", "inmemory")
 	_ = viper.BindEnv("server.port", "SERVER_PORT")
 	_ = viper.BindEnv("server.host", "SERVER_HOST")
 	_ = viper.BindEnv("postgres.url", "POSTGRES_URL")
@@ -66,6 +79,9 @@ func LoadConfig() (*AppConfig, error) {
 	_ = viper.BindEnv("smtp.from_name", "SMTP_FROM_NAME")
 	_ = viper.BindEnv("smtp.tls", "SMTP_TLS")
 	_ = viper.BindEnv("smtp.default_credentials", "SMTP_DEFAULT_CREDENTIALS")
+	_ = viper.BindEnv("redis.url", "REDIS_URL")
+	_ = viper.BindEnv("redis.username", "REDIS_USERNAME")
+	_ = viper.BindEnv("redis.password", "REDIS_PASSWORD")
 
 	viper.AutomaticEnv()
 

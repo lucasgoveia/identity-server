@@ -14,6 +14,14 @@ postgres:
 mailer:
   provider: 'smtp'
 
+cache:
+  provider: "redis"
+
+redis:
+  url: "localhost:6379"
+  username: ""
+  password: ""
+
 smtp:
   host: "localhost"
   port: 25

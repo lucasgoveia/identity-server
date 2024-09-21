@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"identity-server/config"
 	"identity-server/internal/app/accounts"
+	"identity-server/internal/cache"
 	"identity-server/internal/database/postgres"
 	"identity-server/internal/mailing"
 	"identity-server/pkg/providers/database"
@@ -45,6 +46,17 @@ func CreateAccountManager(db database.Database) (accounts.AccountManager, error)
 	}
 }
 
+func CreateCache(config *config.AppConfig) (cache.Cache, error) {
+	switch config.Cache.Provider {
+	case "inmemory":
+		return cache.NewInMemory(), nil
+	case "redis":
+		return cache.NewRedisCache(config.Redis), nil
+	default:
+		return nil, fmt.Errorf("unssuported caching provider %s", config.Cache.Provider)
+	}
+}
+
 func CreateMessageBus(logger *zap.Logger) messaging.MessageBus {
 
 	return messaging.NewInMemoryMessageBus(logger)
@@ -53,7 +65,7 @@ func CreateMessageBus(logger *zap.Logger) messaging.MessageBus {
 func CreateMailSender(config *config.AppConfig, logger *zap.Logger) mailing.Sender {
 	switch config.Mailer.Provider {
 	case "smtp":
-		return mailing.NewSmtpSender(&config.Smtp, logger)
+		return mailing.NewSmtpSender(config.Smtp, logger)
 	default:
 		return mailing.NewStubSender(logger)
 	}

@@ -9,26 +9,30 @@ type InMemoryCache struct {
 	cache *ristretto.Cache[string, any]
 }
 
-func (i *InMemoryCache) Set(key string, value interface{}, ttl time.Duration) {
+func (i *InMemoryCache) Set(key string, value interface{}, ttl time.Duration) error {
 	i.cache.SetWithTTL(key, value, 1, ttl)
 	i.cache.Wait()
+	return nil
 }
 
 func (i *InMemoryCache) Get(key string) (interface{}, bool) {
 	return i.cache.Get(key)
 }
 
-func (i *InMemoryCache) GetOrSet(key string, fetch func() interface{}, ttl time.Duration) interface{} {
+func (i *InMemoryCache) GetOrSet(key string, fetch func() interface{}, ttl time.Duration) (interface{}, error) {
 	if value, found := i.Get(key); found {
-		return value
+		return value, nil
 	}
 	value := fetch()
-	i.Set(key, value, ttl)
-	return value
+	if err := i.Set(key, value, ttl); err != nil {
+		return nil, err
+	}
+	return value, nil
 }
 
-func (i *InMemoryCache) Remove(key string) {
+func (i *InMemoryCache) Remove(key string) error {
 	i.cache.Del(key)
+	return nil
 }
 
 func NewInMemory() *InMemoryCache {
