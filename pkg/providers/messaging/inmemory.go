@@ -5,12 +5,6 @@ import (
 	"reflect"
 )
 
-type ConsumerFunc func(interface{})
-
-type Consumer interface {
-	Handle(interface{})
-}
-
 type InMemoryMessageBus struct {
 	consumers    map[string]ConsumerFunc
 	messageQueue chan Message

@@ -27,7 +27,7 @@ func buildOtpCacheKey(userId ulid.ULID, identityId ulid.ULID, email string) stri
 	return fmt.Sprintf("users:%s:identities:%s:email-verification:%s", userId.String(), identityId.String(), email)
 }
 
-func (c *SendVerificationEmailConsumer) Handle(message interface{}) {
+func (c *SendVerificationEmailConsumer) Handle(message interface{}) error {
 	c.logger.Info("Received message in consumer",
 		zap.String("type", reflect.TypeOf(message).String()))
 
@@ -35,7 +35,7 @@ func (c *SendVerificationEmailConsumer) Handle(message interface{}) {
 
 	if err != nil {
 		c.logger.Error("Failed to generate OTP", zap.Error(err))
-		return
+		return err
 	}
 
 	sendEmailVerificationMsg := message.(commands.SendVerificationEmail)
@@ -46,6 +46,7 @@ func (c *SendVerificationEmailConsumer) Handle(message interface{}) {
 
 	if err != nil {
 		c.logger.Error("Failed to set verification code to cache", zap.Error(err))
+		return err
 	}
 
 	// TODO: Use mjml for email templates
@@ -53,5 +54,8 @@ func (c *SendVerificationEmailConsumer) Handle(message interface{}) {
 
 	if err != nil {
 		c.logger.Error("Failed to send email", zap.Error(err))
+		return err
 	}
+
+	return nil
 }

@@ -65,9 +65,13 @@ func LoadConfig() (*AppConfig, error) {
 		log.Printf("Error loading .env file: %v", err)
 	}
 
+	viper.AutomaticEnv()
+
 	viper.SetDefault("server.port", 8080)
 	viper.SetDefault("server.host", "0.0.0.0")
 	viper.SetDefault("cache.provider", "inmemory")
+	_ = viper.BindEnv("cache.provider", "CACHE_PROVIDER")
+	_ = viper.BindEnv("mailer.provider", "MAILER_PROVIDER")
 	_ = viper.BindEnv("server.port", "SERVER_PORT")
 	_ = viper.BindEnv("server.host", "SERVER_HOST")
 	_ = viper.BindEnv("postgres.url", "POSTGRES_URL")
@@ -82,8 +86,6 @@ func LoadConfig() (*AppConfig, error) {
 	_ = viper.BindEnv("redis.url", "REDIS_URL")
 	_ = viper.BindEnv("redis.username", "REDIS_USERNAME")
 	_ = viper.BindEnv("redis.password", "REDIS_PASSWORD")
-
-	viper.AutomaticEnv()
 
 	// Read the configuration file
 	viper.SetConfigFile("config/config.yaml")

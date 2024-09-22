@@ -16,6 +16,9 @@ func NewPostgresDb(url string) (*Db, error) {
 		return nil, err
 	}
 
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
 	return &Db{
 		Db: db,
 	}, nil
