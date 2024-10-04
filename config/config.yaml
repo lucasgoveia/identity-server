@@ -31,3 +31,6 @@ smtp:
   from_name: "Identity Server"
   tls: false
   default_credentials: false
+
+auth:
+  verification_secret: "my-secure-verification-secret"

@@ -7,4 +7,5 @@ type Cache interface {
 	Get(key string) (interface{}, bool)
 	GetOrSet(key string, fetch func() interface{}, ttl time.Duration) (interface{}, error)
 	Remove(key string) error
+	Exists(key string) bool
 }

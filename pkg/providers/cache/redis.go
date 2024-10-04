@@ -23,6 +23,15 @@ func (i *RedisCache) Get(key string) (interface{}, bool) {
 	return val, true
 }
 
+func (i *RedisCache) Exists(key string) bool {
+	res, err := i.cache.Exists(context.Background(), key).Result()
+	if err != nil {
+		return false
+	}
+
+	return res >= 1
+}
+
 func (i *RedisCache) GetOrSet(key string, fetch func() interface{}, ttl time.Duration) (interface{}, error) {
 	if value, found := i.Get(key); found {
 		return value, nil

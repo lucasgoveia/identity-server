@@ -47,6 +47,7 @@ type AppConfig struct {
 	Smtp     *SmtpConfig     `mapstructure:"smtp"`
 	Cache    *CacheConfig    `mapstructure:"cache"`
 	Redis    *RedisConfig    `mapstructure:"redis"`
+	Auth     *AuthConfig     `mapstructure:"auth"`
 }
 
 type CacheConfig struct {
@@ -57,6 +58,10 @@ type RedisConfig struct {
 	Url      string `mapstructure:"url"`
 	Username string `mapstructure:"username"`
 	Password string `mapstructure:"password"`
+}
+
+type AuthConfig struct {
+	VerificationJwtSecret string `mapstructure:"verification_secret"`
 }
 
 func LoadConfig() (*AppConfig, error) {
@@ -86,6 +91,7 @@ func LoadConfig() (*AppConfig, error) {
 	_ = viper.BindEnv("redis.url", "REDIS_URL")
 	_ = viper.BindEnv("redis.username", "REDIS_USERNAME")
 	_ = viper.BindEnv("redis.password", "REDIS_PASSWORD")
+	_ = viper.BindEnv("auth.verification_secret", "AUTH_VERIFICATION_SECRET")
 
 	// Read the configuration file
 	viper.SetConfigFile("config/config.yaml")

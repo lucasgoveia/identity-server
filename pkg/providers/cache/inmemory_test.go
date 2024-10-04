@@ -1,11 +1,11 @@
 package cache_test
 
 import (
+	"identity-server/pkg/providers/cache"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"identity-server/internal/cache"
 )
 
 func TestInMemoryCache_SetAndGet(t *testing.T) {
@@ -42,11 +42,13 @@ func TestInMemoryCache_GetOrSet(t *testing.T) {
 	}
 
 	// Test GetOrSet when key does not exist
-	result := c.GetOrSet(key, fetch, 5*time.Second)
+	result, err := c.GetOrSet(key, fetch, 5*time.Second)
+	assert.NoError(t, err)
 	assert.Equal(t, value, result, "Fetched value should match the expected result")
 
 	// Test GetOrSet when key already exists
-	result = c.GetOrSet(key, fetch, 5*time.Second)
+	result, err = c.GetOrSet(key, fetch, 5*time.Second)
+	assert.NoError(t, err)
 	assert.Equal(t, value, result, "Value should be retrieved from cache")
 }
 

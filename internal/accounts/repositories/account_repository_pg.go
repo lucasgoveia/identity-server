@@ -1,23 +1,24 @@
-package postgres
+package repositories
 
 import (
 	"errors"
 	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/lib/pq"
-	"identity-server/internal/domain/entities"
-	"identity-server/pkg/providers/database/postgres"
+	"github.com/oklog/ulid/v2"
+	domain2 "identity-server/internal/accounts/domain"
+	"identity-server/pkg/providers/database"
 )
 
-type AccountManager struct {
-	db *postgres.Db
+type PostgresAccountRepository struct {
+	db *database.Db
 }
 
-func NewAccountManager(db *postgres.Db) *AccountManager {
-	return &AccountManager{db: db}
+func NewPostgresAccountRepository(db *database.Db) AccountRepository {
+	return &PostgresAccountRepository{db: db}
 }
 
-func (r *AccountManager) Save(user *entities.User, identity *entities.Identity) (err error) {
+func (r *PostgresAccountRepository) Save(user *domain2.User, identity *domain2.Identity) (err error) {
 	tx, err := r.db.Db.Begin()
 	if err != nil {
 		return err
@@ -67,7 +68,7 @@ func (r *AccountManager) Save(user *entities.User, identity *entities.Identity) 
 	return nil
 }
 
-func (r *AccountManager) IdentityExists(identityType string, value string) (bool, error) {
+func (r *PostgresAccountRepository) IdentityExists(identityType string, value string) (bool, error) {
 	var exists bool
 	err := r.db.Db.QueryRow("SELECT EXISTS(select 1 from user_identities where type = $1 and value = $2)", identityType, value).Scan(&exists)
 	if err != nil {
@@ -75,4 +76,12 @@ func (r *AccountManager) IdentityExists(identityType string, value string) (bool
 	}
 
 	return exists, nil
+}
+
+func (r *PostgresAccountRepository) SetIdentityVerified(userId ulid.ULID, identityId ulid.ULID) error {
+	_, err := r.db.Db.Exec("UPDATE user_identities SET verified = true WHERE user_id = $1 AND id = $2", userId.String(), identityId.String())
+	if err != nil {
+		return err
+	}
+	return nil
 }

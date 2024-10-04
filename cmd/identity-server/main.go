@@ -6,11 +6,14 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 	"identity-server/config"
-	"identity-server/features/signup/email"
-	"identity-server/internal/consumers"
-	"identity-server/internal/messages/commands"
-	"identity-server/internal/security"
+	"identity-server/internal/accounts/consumers"
+	"identity-server/internal/accounts/handlers/identity_verification"
+	"identity-server/internal/accounts/handlers/signup"
+	"identity-server/internal/accounts/messages/commands"
+	"identity-server/internal/accounts/services"
+	"identity-server/pkg/middlewares"
 	"identity-server/pkg/providers"
+	"identity-server/pkg/security"
 	"log"
 	"os"
 	"os/signal"
@@ -49,7 +52,7 @@ func main() {
 		log.Fatalf("Failed to create database: %v", err)
 	}
 
-	accountManager, err := providers.CreateAccountManager(db)
+	accountManager, err := providers.CreateAccountRepository(db)
 	timeProvider := providers.CreateDefaultTimeProvider()
 	hasher, err := providers.CreateHasher(appConfig)
 
@@ -59,17 +62,28 @@ func main() {
 
 	cache, err := providers.CreateCache(appConfig)
 
-	consumer := consumers.NewSendVerificationEmailConsumer(security.NewOTPGenerator(security.NewSecureKeyGenerator()),
-		cache,
-		logger,
-		mailer)
+	secureKeyGen := security.NewSecureKeyGenerator()
+
+	otpGen := security.NewOTPGenerator(secureKeyGen)
+
+	identityVerificationManager := services.NewIdentityVerificationManager(otpGen, cache, hasher, logger)
+
+	tm := security.NewTokenManager(appConfig.Auth, timeProvider, logger, cache)
+
+	consumer := consumers.NewSendVerificationEmailConsumer(identityVerificationManager, logger, mailer)
 	bus.RegisterConsumer(reflect.TypeOf(commands.SendVerificationEmail{}), consumer.Handle)
 
 	bus.Start()
 
 	// TODO: Change: instead of using hasher directly, create an wrapper for password hashing
 	// because, for example, totp secret does not have the same security requirements as password
-	e.POST("/sign-up/email", email.SignUp(accountManager, timeProvider, hasher, bus))
+	e.POST("/sign-up/email", signup.SignUp(accountManager, timeProvider, hasher, bus, tm))
+
+	verificationRoutes := e.Group("/verify")
+
+	verificationRoutes.Use(middlewares.VerifyIdentityAuth(tm))
+
+	verificationRoutes.POST("/email", identity_verification.VerifyEmail(accountManager, tm, identityVerificationManager))
 
 	go func() {
 		// Start the server

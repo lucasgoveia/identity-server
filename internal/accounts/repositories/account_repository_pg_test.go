@@ -1,11 +1,12 @@
-package postgres_test
+package repositories
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"identity-server/pkg/providers/database/postgres"
+	"identity-server/internal/accounts/domain"
+	"identity-server/pkg/providers/database"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,8 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	am "identity-server/internal/database/postgres"
-	"identity-server/internal/domain/entities"
 )
 
 func setupTestDb(t *testing.T) (*sql.DB, func()) {
@@ -101,14 +100,14 @@ func TestAccountManager_Save(t *testing.T) {
 	db, teardown := setupTestDb(t)
 	defer teardown()
 
-	accountManager := am.NewAccountManager(&postgres.Db{Db: db})
+	accountManager := NewPostgresAccountRepository(&database.Db{Db: db})
 
 	t.Run("Successfully save user and identity", func(t *testing.T) {
 		userId := ulid.Make()
-		user := entities.NewUser(userId, "John Doe", nil, time.Now(), time.Now())
+		user := domain.NewUser(userId, "John Doe", nil, time.Now(), time.Now())
 
 		identityId := ulid.Make()
-		identity := entities.NewEmailIdentity(identityId, userId, "johndoe@example.com", "hashed-password", time.Now(), time.Now())
+		identity := domain.NewEmailIdentity(identityId, userId, "johndoe@example.com", "hashed-password", time.Now(), time.Now())
 
 		err := accountManager.Save(user, identity)
 		assert.NoError(t, err, "Saving user and identity should not return an error")
@@ -116,10 +115,10 @@ func TestAccountManager_Save(t *testing.T) {
 
 	t.Run("Duplicate email", func(t *testing.T) {
 		userId := ulid.Make()
-		user := entities.NewUser(userId, "Jane Doe", nil, time.Now(), time.Now())
+		user := domain.NewUser(userId, "Jane Doe", nil, time.Now(), time.Now())
 
 		identityId := ulid.Make()
-		identity := entities.NewEmailIdentity(identityId, userId, "johndoe@example.com", "hashed-password", time.Now(), time.Now()) // Duplicate email
+		identity := domain.NewEmailIdentity(identityId, userId, "johndoe@example.com", "hashed-password", time.Now(), time.Now()) // Duplicate email
 
 		err := accountManager.Save(user, identity)
 		assert.Error(t, err, "Saving a duplicate email should return an error")
@@ -135,10 +134,10 @@ func TestAccountManager_Save(t *testing.T) {
 		assert.NoError(t, err)
 
 		userId := ulid.Make()
-		user := entities.NewUser(userId, "User With Error", nil, time.Now(), time.Now())
+		user := domain.NewUser(userId, "User With Error", nil, time.Now(), time.Now())
 
 		identityId := ulid.Make()
-		identity := entities.NewEmailIdentity(identityId, userId, "error@example.com", "hashed-password", time.Now(), time.Now())
+		identity := domain.NewEmailIdentity(identityId, userId, "error@example.com", "hashed-password", time.Now(), time.Now())
 
 		err = accountManager.Save(user, identity)
 		assert.Error(t, err, "Inserting user with error should return an error")
@@ -150,15 +149,15 @@ func TestAccountManager_IdentityExists(t *testing.T) {
 	db, teardown := setupTestDb(t)
 	defer teardown()
 
-	accountManager := am.NewAccountManager(&postgres.Db{Db: db})
+	accountManager := NewPostgresAccountRepository(&database.Db{Db: db})
 
 	t.Run("Identity exists", func(t *testing.T) {
 		// Create a user and identity first
 		userId := ulid.Make()
-		user := entities.NewUser(userId, "John Doe", nil, time.Now(), time.Now())
+		user := domain.NewUser(userId, "John Doe", nil, time.Now(), time.Now())
 
 		identityId := ulid.Make()
-		identity := entities.NewEmailIdentity(identityId, userId, "existing@example.com", "hashed-password", time.Now(), time.Now())
+		identity := domain.NewEmailIdentity(identityId, userId, "existing@example.com", "hashed-password", time.Now(), time.Now())
 
 		err := accountManager.Save(user, identity)
 		assert.NoError(t, err)

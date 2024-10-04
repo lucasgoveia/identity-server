@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"go.uber.org/zap"
 	"identity-server/config"
-	"identity-server/internal/app/accounts"
-	"identity-server/internal/cache"
-	"identity-server/internal/database/postgres"
-	"identity-server/internal/mailing"
+	"identity-server/internal/accounts/repositories"
+	cache2 "identity-server/pkg/providers/cache"
 	"identity-server/pkg/providers/database"
-	postgresDb "identity-server/pkg/providers/database/postgres"
 	"identity-server/pkg/providers/hashing"
+	mailing2 "identity-server/pkg/providers/mailing"
 	"identity-server/pkg/providers/messaging"
 	"identity-server/pkg/providers/time"
 )
@@ -18,7 +16,7 @@ import (
 func CreateDatabase(config *config.AppConfig) (database.Database, error) {
 	switch config.Database.Provider {
 	case "postgres":
-		return postgresDb.NewPostgresDb(config.Postgres.URL)
+		return database.NewPostgresDb(config.Postgres.URL)
 	default:
 		return nil, fmt.Errorf("unsupported database provider: %s", config.Database.Provider)
 	}
@@ -37,21 +35,21 @@ func CreateDefaultTimeProvider() time.Provider {
 	return &time.DefaultTimeProvider{}
 }
 
-func CreateAccountManager(db database.Database) (accounts.AccountManager, error) {
+func CreateAccountRepository(db database.Database) (repositories.AccountRepository, error) {
 	switch db.GetProviderType() {
 	case "postgres":
-		return postgres.NewAccountManager(db.(*postgresDb.Db)), nil
+		return repositories.NewPostgresAccountRepository(db.(*database.Db)), nil
 	default:
 		return nil, fmt.Errorf("unsupported database provider: %s", db.GetProviderType())
 	}
 }
 
-func CreateCache(config *config.AppConfig) (cache.Cache, error) {
+func CreateCache(config *config.AppConfig) (cache2.Cache, error) {
 	switch config.Cache.Provider {
 	case "inmemory":
-		return cache.NewInMemory(), nil
+		return cache2.NewInMemory(), nil
 	case "redis":
-		return cache.NewRedisCache(config.Redis), nil
+		return cache2.NewRedisCache(config.Redis), nil
 	default:
 		return nil, fmt.Errorf("unssuported caching provider %s", config.Cache.Provider)
 	}
@@ -62,11 +60,11 @@ func CreateMessageBus(logger *zap.Logger) messaging.MessageBus {
 	return messaging.NewInMemoryMessageBus(logger)
 }
 
-func CreateMailSender(config *config.AppConfig, logger *zap.Logger) mailing.Sender {
+func CreateMailSender(config *config.AppConfig, logger *zap.Logger) mailing2.Sender {
 	switch config.Mailer.Provider {
 	case "smtp":
-		return mailing.NewSmtpSender(config.Smtp, logger)
+		return mailing2.NewSmtpSender(config.Smtp, logger)
 	default:
-		return mailing.NewStubSender(logger)
+		return mailing2.NewStubSender(logger)
 	}
 }

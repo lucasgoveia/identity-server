@@ -19,6 +19,11 @@ func (i *InMemoryCache) Get(key string) (interface{}, bool) {
 	return i.cache.Get(key)
 }
 
+func (i *InMemoryCache) Exists(key string) bool {
+	_, found := i.cache.Get(key)
+	return found
+}
+
 func (i *InMemoryCache) GetOrSet(key string, fetch func() interface{}, ttl time.Duration) (interface{}, error) {
 	if value, found := i.Get(key); found {
 		return value, nil
