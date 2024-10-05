@@ -34,7 +34,7 @@ func VerifyEmail(accManager repositories.AccountRepository, tokenMge *security.T
 			return c.JSON(http.StatusUnauthorized, "Invalid code")
 		}
 
-		err = accManager.SetIdentityVerified(user.UserId, user.IdentityId)
+		err = accManager.SetIdentityVerified(c.Request().Context(), user.UserId, user.IdentityId)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err)
 		}

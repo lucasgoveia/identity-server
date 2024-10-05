@@ -3,6 +3,8 @@ package database
 import (
 	"database/sql"
 	_ "github.com/lib/pq"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 type Db struct {
@@ -10,7 +12,9 @@ type Db struct {
 }
 
 func NewPostgresDb(url string) (*Db, error) {
-	db, err := sql.Open("postgres", url)
+	db, err := otelsql.Open("postgres", url,
+		otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
+		otelsql.WithDBName("identity-server-db"))
 
 	if err != nil {
 		return nil, err

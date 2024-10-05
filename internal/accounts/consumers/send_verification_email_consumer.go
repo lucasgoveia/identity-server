@@ -1,6 +1,7 @@
 package consumers
 
 import (
+	"context"
 	"fmt"
 	"go.uber.org/zap"
 	"identity-server/internal/accounts/messages/commands"
@@ -19,7 +20,7 @@ func NewSendVerificationEmailConsumer(verificationManager *services.IdentityVeri
 	return &SendVerificationEmailConsumer{verificationManager: verificationManager, logger: logger, mailSender: sender}
 }
 
-func (c *SendVerificationEmailConsumer) Handle(message interface{}) error {
+func (c *SendVerificationEmailConsumer) Handle(ctx context.Context, message interface{}) error {
 	c.logger.Info("Received message in consumer",
 		zap.String("type", reflect.TypeOf(message).String()))
 

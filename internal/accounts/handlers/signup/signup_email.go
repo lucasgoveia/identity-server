@@ -3,7 +3,7 @@ package signup
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/oklog/ulid/v2"
-	domain2 "identity-server/internal/accounts/domain"
+	"identity-server/internal/accounts/domain"
 	"identity-server/internal/accounts/messages/commands"
 	"identity-server/internal/accounts/repositories"
 	"identity-server/pkg/providers/hashing"
@@ -26,7 +26,7 @@ func SignUp(accManager repositories.AccountRepository, timeProvider tprovider.Pr
 			return c.JSON(http.StatusBadRequest, err)
 		}
 
-		exists, err := accManager.IdentityExists(domain2.IdentityEmail.String(), req.Email)
+		exists, err := accManager.IdentityExists(c.Request().Context(), domain.IdentityEmail.String(), req.Email)
 
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err)
@@ -42,10 +42,10 @@ func SignUp(accManager repositories.AccountRepository, timeProvider tprovider.Pr
 		}
 
 		now := timeProvider.UtcNow()
-		user := domain2.NewUser(ulid.Make(), req.Email, nil, now, now)
-		identity := domain2.NewEmailIdentity(ulid.Make(), user.Id, req.Email, hashedPassword, now, now)
+		user := domain.NewUser(ulid.Make(), req.Email, nil, now, now)
+		identity := domain.NewEmailIdentity(ulid.Make(), user.Id, req.Email, hashedPassword, now, now)
 
-		if err := accManager.Save(user, identity); err != nil {
+		if err := accManager.Save(c.Request().Context(), user, identity); err != nil {
 			if err.Error() == "duplicated email" {
 				return c.JSON(http.StatusBadRequest, err)
 			}
@@ -60,7 +60,7 @@ func SignUp(accManager repositories.AccountRepository, timeProvider tprovider.Pr
 		}
 
 		// Send verification email
-		bus.Publish(commands.SendVerificationEmail{
+		bus.Publish(c.Request().Context(), commands.SendVerificationEmail{
 			Email:      identity.Value,
 			IdentityId: identity.Id,
 			UserId:     user.Id,
