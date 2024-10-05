@@ -25,7 +25,7 @@ func (c *SendVerificationEmailConsumer) Handle(ctx context.Context, message inte
 		zap.String("type", reflect.TypeOf(message).String()))
 
 	sendEmailVerificationMsg := message.(commands.SendVerificationEmail)
-	otp, err := c.verificationManager.GenerateEmailOTP(sendEmailVerificationMsg.UserId, sendEmailVerificationMsg.IdentityId)
+	otp, err := c.verificationManager.GenerateEmailOTP(ctx, sendEmailVerificationMsg.UserId, sendEmailVerificationMsg.IdentityId)
 
 	if err != nil {
 		c.logger.Error("Failed to generate OTP", zap.Error(err))

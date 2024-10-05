@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"github.com/dgraph-io/ristretto"
 	"time"
 )
@@ -9,33 +10,33 @@ type InMemoryCache struct {
 	cache *ristretto.Cache[string, any]
 }
 
-func (i *InMemoryCache) Set(key string, value interface{}, ttl time.Duration) error {
+func (i *InMemoryCache) Set(_ context.Context, key string, value interface{}, ttl time.Duration) error {
 	i.cache.SetWithTTL(key, value, 1, ttl)
 	i.cache.Wait()
 	return nil
 }
 
-func (i *InMemoryCache) Get(key string) (interface{}, bool) {
+func (i *InMemoryCache) Get(_ context.Context, key string) (interface{}, bool) {
 	return i.cache.Get(key)
 }
 
-func (i *InMemoryCache) Exists(key string) bool {
+func (i *InMemoryCache) Exists(_ context.Context, key string) bool {
 	_, found := i.cache.Get(key)
 	return found
 }
 
-func (i *InMemoryCache) GetOrSet(key string, fetch func() interface{}, ttl time.Duration) (interface{}, error) {
-	if value, found := i.Get(key); found {
+func (i *InMemoryCache) GetOrSet(ctx context.Context, key string, fetch func() interface{}, ttl time.Duration) (interface{}, error) {
+	if value, found := i.Get(ctx, key); found {
 		return value, nil
 	}
 	value := fetch()
-	if err := i.Set(key, value, ttl); err != nil {
+	if err := i.Set(ctx, key, value, ttl); err != nil {
 		return nil, err
 	}
 	return value, nil
 }
 
-func (i *InMemoryCache) Remove(key string) error {
+func (i *InMemoryCache) Remove(_ context.Context, key string) error {
 	i.cache.Del(key)
 	return nil
 }

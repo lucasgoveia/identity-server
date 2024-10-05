@@ -1,11 +1,14 @@
 package cache
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type Cache interface {
-	Set(key string, value interface{}, ttl time.Duration) error
-	Get(key string) (interface{}, bool)
-	GetOrSet(key string, fetch func() interface{}, ttl time.Duration) (interface{}, error)
-	Remove(key string) error
-	Exists(key string) bool
+	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
+	Get(ctx context.Context, key string) (interface{}, bool)
+	GetOrSet(ctx context.Context, key string, fetch func() interface{}, ttl time.Duration) (interface{}, error)
+	Remove(ctx context.Context, key string) error
+	Exists(ctx context.Context, key string) bool
 }

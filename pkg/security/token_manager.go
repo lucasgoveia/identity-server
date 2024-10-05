@@ -1,6 +1,7 @@
 package security
 
 import (
+	"context"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/oklog/ulid/v2"
@@ -60,7 +61,7 @@ func (m *TokenManager) GenerateVerifyIdentityToken(userId ulid.ULID, identityId 
 	return tokenString, nil
 }
 
-func (m *TokenManager) CheckVerifyIdentityToken(tokenString string) (jwt.MapClaims, error) {
+func (m *TokenManager) CheckVerifyIdentityToken(ctx context.Context, tokenString string) (jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -75,7 +76,7 @@ func (m *TokenManager) CheckVerifyIdentityToken(tokenString string) (jwt.MapClai
 		return nil, jwt.ErrSignatureInvalid
 	}
 
-	exists := m.cache.Exists(buildVerifyIdentityCacheKey(ulid.MustParse(claims[ClaimJWTID].(string))))
+	exists := m.cache.Exists(ctx, buildVerifyIdentityCacheKey(ulid.MustParse(claims[ClaimJWTID].(string))))
 
 	if exists {
 		return nil, jwt.ErrTokenInvalidId
@@ -88,6 +89,6 @@ func buildVerifyIdentityCacheKey(tokenId ulid.ULID) string {
 	return fmt.Sprintf("revoked-tokens:verify-identity:%s", tokenId.String())
 }
 
-func (m *TokenManager) RevokeVerifyIdentityToken(tokenId ulid.ULID) error {
-	return m.cache.Set(buildVerifyIdentityCacheKey(tokenId), true, time.Hour*1)
+func (m *TokenManager) RevokeVerifyIdentityToken(ctx context.Context, tokenId ulid.ULID) error {
+	return m.cache.Set(ctx, buildVerifyIdentityCacheKey(tokenId), true, time.Hour*1)
 }

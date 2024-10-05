@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/oklog/ulid/v2"
@@ -26,7 +27,7 @@ func buildOtpCacheKey(userId ulid.ULID, identityId ulid.ULID) string {
 	return fmt.Sprintf("users:%s:identities:%s:email", userId.String(), identityId.String())
 }
 
-func (m *IdentityVerificationManager) GenerateEmailOTP(userId ulid.ULID, identityId ulid.ULID) (string, error) {
+func (m *IdentityVerificationManager) GenerateEmailOTP(ctx context.Context, userId ulid.ULID, identityId ulid.ULID) (string, error) {
 	otp, err := m.otpGen.GenerateOTP()
 
 	if err != nil {
@@ -43,7 +44,7 @@ func (m *IdentityVerificationManager) GenerateEmailOTP(userId ulid.ULID, identit
 		return "", err
 	}
 
-	err = m.cache.Set(cacheKey, hashedOtp, time.Hour*1)
+	err = m.cache.Set(ctx, cacheKey, hashedOtp, time.Hour*1)
 
 	if err != nil {
 		m.logger.Error("Failed to set verification code to cache", zap.Error(err))
@@ -53,10 +54,10 @@ func (m *IdentityVerificationManager) GenerateEmailOTP(userId ulid.ULID, identit
 	return otp, nil
 }
 
-func (m *IdentityVerificationManager) VerifyEmailOtp(userId ulid.ULID, identityId ulid.ULID, code string) (bool, error) {
+func (m *IdentityVerificationManager) VerifyEmailOtp(ctx context.Context, userId ulid.ULID, identityId ulid.ULID, code string) (bool, error) {
 	cacheKey := buildOtpCacheKey(userId, identityId)
 
-	hashedOtp, exists := m.cache.Get(cacheKey)
+	hashedOtp, exists := m.cache.Get(ctx, cacheKey)
 
 	if !exists {
 		m.logger.Error("Failed to get verification code from cache")
@@ -72,9 +73,9 @@ func (m *IdentityVerificationManager) VerifyEmailOtp(userId ulid.ULID, identityI
 	return verified, nil
 }
 
-func (m *IdentityVerificationManager) RevokeEmailOtp(userId ulid.ULID, identityId ulid.ULID) error {
+func (m *IdentityVerificationManager) RevokeEmailOtp(ctx context.Context, userId ulid.ULID, identityId ulid.ULID) error {
 	cacheKey := buildOtpCacheKey(userId, identityId)
-	err := m.cache.Remove(cacheKey)
+	err := m.cache.Remove(ctx, cacheKey)
 	if err != nil {
 		return err
 	}
