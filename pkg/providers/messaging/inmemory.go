@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"reflect"
@@ -40,11 +40,11 @@ func (b *InMemoryMessageBus) Publish(ctx context.Context, message interface{}) {
 	propagator := otel.GetTextMapPropagator()
 	headers := make(map[string]string)
 	propagator.Inject(ctx, propagation.MapCarrier(headers))
-	tracer := otel.GetTracerProvider().Tracer("inmemory")
+	tracer := otel.GetTracerProvider().Tracer("messaging/inmemory")
 	ctx, span := tracer.Start(ctx, fmt.Sprintf("publish %s", routingKey),
 		trace.WithSpanKind(trace.SpanKindProducer),
-		trace.WithAttributes(attribute.String("messaging.system", "inmemory")),
-		trace.WithAttributes(attribute.String("messaging.destination.name", routingKey)))
+		trace.WithAttributes(semconv.MessagingSystemKey.String("inmemory")),
+		trace.WithAttributes(semconv.MessagingDestinationName(routingKey)))
 
 	defer span.End()
 	b.logger.Info("Received message",
@@ -65,14 +65,14 @@ func (b *InMemoryMessageBus) Start() {
 		for msg := range b.messageQueue {
 			func() {
 				// TODO: should probably use some consts here
-				tracer := otel.GetTracerProvider().Tracer("inmemory")
+				tracer := otel.GetTracerProvider().Tracer("messaging/inmemory")
 				propagator := otel.GetTextMapPropagator()
 				ctx := context.Background()
 				ctx = propagator.Extract(ctx, propagation.MapCarrier(msg.Headers))
 				ctx, span := tracer.Start(ctx, fmt.Sprintf("receive %s", msg.RoutingKey),
 					trace.WithSpanKind(trace.SpanKindConsumer),
-					trace.WithAttributes(attribute.String("messaging.system", "inmemory")),
-					trace.WithAttributes(attribute.String("messaging.destination.name", msg.RoutingKey)))
+					trace.WithAttributes(semconv.MessagingSystemKey.String("inmemory")),
+					trace.WithAttributes(semconv.MessagingDestinationName(msg.RoutingKey)))
 				defer span.End()
 				if consumer, ok := b.consumers[msg.RoutingKey]; ok {
 					if err := consumer(ctx, msg.Body); err != nil {
