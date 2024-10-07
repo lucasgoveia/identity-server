@@ -26,7 +26,7 @@ func VerifyIdentityAuth(tokenMge *security.TokenManager) echo.MiddlewareFunc {
 			}
 
 			// Check if token is valid
-			claims, err := tokenMge.CheckVerifyIdentityToken(token)
+			claims, err := tokenMge.CheckVerifyIdentityToken(c.Request().Context(), token)
 
 			if err != nil {
 				return c.JSON(401, "Unauthorized")

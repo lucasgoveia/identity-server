@@ -1,17 +1,19 @@
 package messaging
 
-import "reflect"
+import (
+	"context"
+	"reflect"
+)
 
 type MessageBus interface {
 	Start()
 	Stop()
 	RegisterConsumer(reflect.Type, ConsumerFunc)
-	Publish(interface{})
-	//PublishBatch([]interface{})
+	Publish(ctx context.Context, message interface{})
 }
 
-type ConsumerFunc func(interface{}) error
+type ConsumerFunc func(ctx context.Context, message interface{}) error
 
 type Consumer interface {
-	Handle(interface{})
+	Handle(ctx context.Context, message interface{}) error
 }

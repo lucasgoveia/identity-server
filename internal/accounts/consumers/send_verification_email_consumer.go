@@ -1,6 +1,7 @@
 package consumers
 
 import (
+	"context"
 	"fmt"
 	"go.uber.org/zap"
 	"identity-server/internal/accounts/messages/commands"
@@ -19,12 +20,12 @@ func NewSendVerificationEmailConsumer(verificationManager *services.IdentityVeri
 	return &SendVerificationEmailConsumer{verificationManager: verificationManager, logger: logger, mailSender: sender}
 }
 
-func (c *SendVerificationEmailConsumer) Handle(message interface{}) error {
+func (c *SendVerificationEmailConsumer) Handle(ctx context.Context, message interface{}) error {
 	c.logger.Info("Received message in consumer",
 		zap.String("type", reflect.TypeOf(message).String()))
 
 	sendEmailVerificationMsg := message.(commands.SendVerificationEmail)
-	otp, err := c.verificationManager.GenerateEmailOTP(sendEmailVerificationMsg.UserId, sendEmailVerificationMsg.IdentityId)
+	otp, err := c.verificationManager.GenerateEmailOTP(ctx, sendEmailVerificationMsg.UserId, sendEmailVerificationMsg.IdentityId)
 
 	if err != nil {
 		c.logger.Error("Failed to generate OTP", zap.Error(err))

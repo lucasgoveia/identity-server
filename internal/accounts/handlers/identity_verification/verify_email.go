@@ -24,7 +24,7 @@ func VerifyEmail(accManager repositories.AccountRepository, tokenMge *security.T
 		user := c.Get("user").(middlewares.LoggedInUser)
 
 		// Check if code is valid
-		verified, err := verificationManager.VerifyEmailOtp(user.UserId, user.IdentityId, req.Code)
+		verified, err := verificationManager.VerifyEmailOtp(c.Request().Context(), user.UserId, user.IdentityId, req.Code)
 
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err)
@@ -34,18 +34,18 @@ func VerifyEmail(accManager repositories.AccountRepository, tokenMge *security.T
 			return c.JSON(http.StatusUnauthorized, "Invalid code")
 		}
 
-		err = accManager.SetIdentityVerified(user.UserId, user.IdentityId)
+		err = accManager.SetIdentityVerified(c.Request().Context(), user.UserId, user.IdentityId)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err)
 		}
 
-		err = verificationManager.RevokeEmailOtp(user.UserId, user.IdentityId)
+		err = verificationManager.RevokeEmailOtp(c.Request().Context(), user.UserId, user.IdentityId)
 		if err != nil {
 			// FIXME: Retry?
 			return c.JSON(http.StatusInternalServerError, err)
 		}
 
-		err = tokenMge.RevokeVerifyIdentityToken(user.TokenId)
+		err = tokenMge.RevokeVerifyIdentityToken(c.Request().Context(), user.TokenId)
 		if err != nil {
 			// FIXME: Retry?
 			return c.JSON(http.StatusInternalServerError, err)

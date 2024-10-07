@@ -1,12 +1,13 @@
 package repositories
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/lib/pq"
 	"github.com/oklog/ulid/v2"
-	domain2 "identity-server/internal/accounts/domain"
+	"identity-server/internal/accounts/domain"
 	"identity-server/pkg/providers/database"
 )
 
@@ -18,8 +19,8 @@ func NewPostgresAccountRepository(db *database.Db) AccountRepository {
 	return &PostgresAccountRepository{db: db}
 }
 
-func (r *PostgresAccountRepository) Save(user *domain2.User, identity *domain2.Identity) (err error) {
-	tx, err := r.db.Db.Begin()
+func (r *PostgresAccountRepository) Save(ctx context.Context, user *domain.User, identity *domain.Identity) (err error) {
+	tx, err := r.db.Db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -42,7 +43,7 @@ func (r *PostgresAccountRepository) Save(user *domain2.User, identity *domain2.I
 		Columns("id", "name", "avatar_link", "created_at", "updated_at").
 		Values(user.Id.String(), user.Name, user.AvatarLink, user.CreatedAt, user.UpdatedAt).
 		ToSql()
-	_, err = tx.Exec(insertCmd, args...)
+	_, err = tx.ExecContext(ctx, insertCmd, args...)
 
 	if err != nil {
 		return errors.New(fmt.Sprintf("failed to insert user: %v", err))
@@ -53,7 +54,7 @@ func (r *PostgresAccountRepository) Save(user *domain2.User, identity *domain2.I
 		Values(identity.Id.String(), identity.UserId.String(), identity.Type, identity.Value, identity.Credential, identity.Provider, identity.Verified, identity.CreatedAt, identity.UpdatedAt).
 		ToSql()
 
-	_, err = tx.Exec(insertCmd, args...)
+	_, err = tx.ExecContext(ctx, insertCmd, args...)
 
 	if err != nil {
 		var pqErr *pq.Error
@@ -68,9 +69,9 @@ func (r *PostgresAccountRepository) Save(user *domain2.User, identity *domain2.I
 	return nil
 }
 
-func (r *PostgresAccountRepository) IdentityExists(identityType string, value string) (bool, error) {
+func (r *PostgresAccountRepository) IdentityExists(ctx context.Context, identityType string, value string) (bool, error) {
 	var exists bool
-	err := r.db.Db.QueryRow("SELECT EXISTS(select 1 from user_identities where type = $1 and value = $2)", identityType, value).Scan(&exists)
+	err := r.db.Db.QueryRowContext(ctx, "SELECT EXISTS(select 1 from user_identities where type = $1 and value = $2)", identityType, value).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
@@ -78,8 +79,8 @@ func (r *PostgresAccountRepository) IdentityExists(identityType string, value st
 	return exists, nil
 }
 
-func (r *PostgresAccountRepository) SetIdentityVerified(userId ulid.ULID, identityId ulid.ULID) error {
-	_, err := r.db.Db.Exec("UPDATE user_identities SET verified = true WHERE user_id = $1 AND id = $2", userId.String(), identityId.String())
+func (r *PostgresAccountRepository) SetIdentityVerified(ctx context.Context, userId ulid.ULID, identityId ulid.ULID) error {
+	_, err := r.db.Db.ExecContext(ctx, "UPDATE user_identities SET verified = true WHERE user_id = $1 AND id = $2", userId.String(), identityId.String())
 	if err != nil {
 		return err
 	}

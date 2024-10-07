@@ -1,12 +1,13 @@
 package repositories
 
 import (
+	"context"
 	"github.com/oklog/ulid/v2"
-	domain2 "identity-server/internal/accounts/domain"
+	"identity-server/internal/accounts/domain"
 )
 
 type AccountRepository interface {
-	Save(user *domain2.User, identity *domain2.Identity) error
-	IdentityExists(identityType string, value string) (bool, error)
-	SetIdentityVerified(userId ulid.ULID, identityId ulid.ULID) error
+	Save(ctx context.Context, user *domain.User, identity *domain.Identity) error
+	IdentityExists(ctx context.Context, identityType string, value string) (bool, error)
+	SetIdentityVerified(ctx context.Context, userId ulid.ULID, identityId ulid.ULID) error
 }
