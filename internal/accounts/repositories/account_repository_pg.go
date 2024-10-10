@@ -7,7 +7,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/lib/pq"
 	"github.com/oklog/ulid/v2"
-	"identity-server/internal/accounts/domain"
+	domain2 "identity-server/internal/domain"
 	"identity-server/pkg/providers/database"
 )
 
@@ -19,7 +19,7 @@ func NewPostgresAccountRepository(db *database.Db) AccountRepository {
 	return &PostgresAccountRepository{db: db}
 }
 
-func (r *PostgresAccountRepository) Save(ctx context.Context, user *domain.User, identity *domain.Identity) (err error) {
+func (r *PostgresAccountRepository) Save(ctx context.Context, user *domain2.User, identity *domain2.Identity) (err error) {
 	tx, err := r.db.Db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

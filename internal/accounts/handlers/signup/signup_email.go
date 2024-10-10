@@ -3,15 +3,14 @@ package signup
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/oklog/ulid/v2"
-	"identity-server/internal/accounts/domain"
 	"identity-server/internal/accounts/messages/commands"
 	"identity-server/internal/accounts/repositories"
+	domain2 "identity-server/internal/domain"
 	"identity-server/pkg/providers/hashing"
 	"identity-server/pkg/providers/messaging"
 	tprovider "identity-server/pkg/providers/time"
 	"identity-server/pkg/security"
 	"net/http"
-	"time"
 )
 
 type SignUpEmailReq struct {
@@ -26,7 +25,7 @@ func SignUp(accManager repositories.AccountRepository, timeProvider tprovider.Pr
 			return c.JSON(http.StatusBadRequest, err)
 		}
 
-		exists, err := accManager.IdentityExists(c.Request().Context(), domain.IdentityEmail.String(), req.Email)
+		exists, err := accManager.IdentityExists(c.Request().Context(), domain2.IdentityEmail.String(), req.Email)
 
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err)
@@ -42,8 +41,8 @@ func SignUp(accManager repositories.AccountRepository, timeProvider tprovider.Pr
 		}
 
 		now := timeProvider.UtcNow()
-		user := domain.NewUser(ulid.Make(), req.Email, nil, now, now)
-		identity := domain.NewEmailIdentity(ulid.Make(), user.Id, req.Email, hashedPassword, now, now)
+		user := domain2.NewUser(ulid.Make(), req.Email, nil, now, now)
+		identity := domain2.NewEmailIdentity(ulid.Make(), user.Id, req.Email, hashedPassword, now, now)
 
 		if err := accManager.Save(c.Request().Context(), user, identity); err != nil {
 			if err.Error() == "duplicated email" {
@@ -53,7 +52,7 @@ func SignUp(accManager repositories.AccountRepository, timeProvider tprovider.Pr
 		}
 
 		// Authenticate with limited scope just for email verification
-		token, err := tokenMge.GenerateVerifyIdentityToken(user.Id, identity.Id, time.Hour*1)
+		token, err := tokenMge.GenerateVerifyIdentityToken(user.Id, identity.Id)
 
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err)

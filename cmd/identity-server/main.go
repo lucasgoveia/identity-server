@@ -23,7 +23,9 @@ import (
 	"identity-server/internal/accounts/handlers/identity_verification"
 	"identity-server/internal/accounts/handlers/signup"
 	"identity-server/internal/accounts/messages/commands"
-	"identity-server/internal/accounts/services"
+	accServices "identity-server/internal/accounts/services"
+	"identity-server/internal/auth/handlers/login"
+	authServices "identity-server/internal/auth/services"
 	"identity-server/pkg/middlewares"
 	"identity-server/pkg/providers"
 	"identity-server/pkg/security"
@@ -120,9 +122,16 @@ func main() {
 
 	otpGen := security.NewOTPGenerator(secureKeyGen)
 
-	identityVerificationManager := services.NewIdentityVerificationManager(otpGen, cache, hasher, logger)
+	identityVerificationManager := accServices.NewIdentityVerificationManager(otpGen, cache, hasher, logger)
 
-	tm := security.NewTokenManager(appConfig.Auth, timeProvider, logger, cache)
+	rsaHolder, err := security.NewRSAKeyHolder(appConfig.Auth.AccessTokenConfig.PrivateKey, appConfig.Auth.AccessTokenConfig.PublicKey)
+
+	tm := security.NewTokenManager(appConfig.Auth, timeProvider, logger, cache, rsaHolder)
+
+	sessionRepo, err := providers.CreateSessionRepository(db)
+	identityRepo, err := providers.CreateIdentityRepository(db)
+
+	authService := authServices.NewAuthService(logger, tm, sessionRepo, timeProvider, appConfig.Auth.SessionConfig)
 
 	consumer := consumers.NewSendVerificationEmailConsumer(identityVerificationManager, logger, mailer)
 	bus.RegisterConsumer(reflect.TypeOf(commands.SendVerificationEmail{}), consumer.Handle)
@@ -132,6 +141,8 @@ func main() {
 	// TODO: Change: instead of using hasher directly, create an wrapper for password hashing
 	// because, for example, totp secret does not have the same security requirements as password
 	e.POST("/sign-up/email", signup.SignUp(accountManager, timeProvider, hasher, bus, tm))
+
+	e.POST("login/email", login.Login(identityRepo, hasher, timeProvider, authService))
 
 	verificationRoutes := e.Group("/verify")
 

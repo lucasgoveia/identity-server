@@ -13,7 +13,7 @@ type VerifyEmailReq struct {
 	Code string `json:"code"`
 }
 
-func VerifyEmail(accManager repositories.AccountRepository, tokenMge *security.TokenManager, verificationManager *services.IdentityVerificationManager) echo.HandlerFunc {
+func VerifyEmail(accManager repositories.AccountRepository, tokenMge *security.TokenManager, verificationManager *accServices.IdentityVerificationManager) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var req VerifyEmailReq
 		if err := c.Bind(&req); err != nil {

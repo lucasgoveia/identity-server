@@ -11,12 +11,12 @@ import (
 )
 
 type SendVerificationEmailConsumer struct {
-	verificationManager *services.IdentityVerificationManager
+	verificationManager *accServices.IdentityVerificationManager
 	logger              *zap.Logger
 	mailSender          mailing.Sender
 }
 
-func NewSendVerificationEmailConsumer(verificationManager *services.IdentityVerificationManager, logger *zap.Logger, sender mailing.Sender) *SendVerificationEmailConsumer {
+func NewSendVerificationEmailConsumer(verificationManager *accServices.IdentityVerificationManager, logger *zap.Logger, sender mailing.Sender) *SendVerificationEmailConsumer {
 	return &SendVerificationEmailConsumer{verificationManager: verificationManager, logger: logger, mailSender: sender}
 }
 

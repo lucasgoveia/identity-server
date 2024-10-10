@@ -33,4 +33,20 @@ smtp:
   default_credentials: false
 
 auth:
-  verification_secret: "my-secure-verification-secret"
+  credential_verification:
+    secret: "your-credential-verification-secret"
+    lifetime_minutes: 30
+
+  session:
+    lifetime_hours: 24
+    trusted_lifetime_hours: 720
+
+  refresh_token:
+    secret: "your-refresh-token-secret"
+
+  access_token:
+    lifetime_minutes: 5
+    issuer: "identity-server"
+    private_key: "your-rsa-2048-private-key"
+    public_key: "your-rsa-2048-public-key"
+

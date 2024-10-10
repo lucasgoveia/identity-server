@@ -3,7 +3,7 @@ package repositories
 import (
 	"context"
 	"github.com/oklog/ulid/v2"
-	"identity-server/internal/accounts/domain"
+	"identity-server/internal/domain"
 )
 
 type AccountRepository interface {

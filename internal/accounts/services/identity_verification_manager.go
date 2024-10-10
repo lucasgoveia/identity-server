@@ -1,4 +1,4 @@
-package services
+package accServices
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/oklog/ulid/v2"
 	"go.uber.org/zap"
+	"identity-server/config"
 	"identity-server/pkg/providers/cache"
 	"identity-server/pkg/providers/hashing"
 	"identity-server/pkg/security"
@@ -17,6 +18,7 @@ type IdentityVerificationManager struct {
 	cache  cache.Cache
 	hasher hashing.Hasher
 	logger *zap.Logger
+	config *config.CredentialVerificationConfig
 }
 
 func NewIdentityVerificationManager(otpGenerator *security.OTPGenerator, cache cache.Cache, hasher hashing.Hasher, logger *zap.Logger) *IdentityVerificationManager {
@@ -44,7 +46,7 @@ func (m *IdentityVerificationManager) GenerateEmailOTP(ctx context.Context, user
 		return "", err
 	}
 
-	err = m.cache.Set(ctx, cacheKey, hashedOtp, time.Hour*1)
+	err = m.cache.Set(ctx, cacheKey, hashedOtp, time.Minute*time.Duration(m.config.LifetimeMinutes))
 
 	if err != nil {
 		m.logger.Error("Failed to set verification code to cache", zap.Error(err))

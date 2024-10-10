@@ -10,7 +10,7 @@ COPY src/AuthService.WebApi/atlas/migrations /migrations
 
 
 # Force re-hash, there will be a pipeline to verifiy the migrations integrity
-# this was needed cuz the git was altering the files endlines
+# this was needed cuz git was altering the files endlines
 RUN exec atlas migrate hash
 
 CMD exec atlas migrate apply --dir file:///migrations --url $DATABASE_URL

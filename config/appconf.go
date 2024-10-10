@@ -38,18 +38,6 @@ type MailerConfig struct {
 	Provider string `mapstructure:"provider"`
 }
 
-type AppConfig struct {
-	Server   *ServerConfig   `mapstructure:"server"`
-	Database *DatabaseConfig `mapstructure:"database"`
-	Hashing  *HashingConfig  `mapstructure:"hashing"`
-	Postgres *PostgresConfig `mapstructure:"postgres"`
-	Mailer   *MailerConfig   `mapstructure:"mailer"`
-	Smtp     *SmtpConfig     `mapstructure:"smtp"`
-	Cache    *CacheConfig    `mapstructure:"cache"`
-	Redis    *RedisConfig    `mapstructure:"redis"`
-	Auth     *AuthConfig     `mapstructure:"auth"`
-}
-
 type CacheConfig struct {
 	Provider string `mapstructure:"provider"`
 }
@@ -60,8 +48,44 @@ type RedisConfig struct {
 	Password string `mapstructure:"password"`
 }
 
+type CredentialVerificationConfig struct {
+	LifetimeMinutes int    `mapstructure:"lifetime_minutes"`
+	Secret          string `mapstructure:"secret"`
+}
+
+type RefreshTokenConfig struct {
+	Secret string `mapstructure:"secret"`
+}
+
+type AccessTokenConfig struct {
+	LifetimeMinutes int    `mapstructure:"lifetime_minutes"`
+	Issuer          string `mapstructure:"issuer"`
+	PrivateKey      string `mapstructure:"private_key"`
+	PublicKey       string `mapstructure:"public_key"`
+}
+
+type SessionConfig struct {
+	LifetimeHours        int `mapstructure:"lifetime_hours"`
+	TrustedLifetimeHours int `mapstructure:"trusted_lifetime_hours"`
+}
+
 type AuthConfig struct {
-	VerificationJwtSecret string `mapstructure:"verification_secret"`
+	CredentialVerificationConfig *CredentialVerificationConfig `mapstructure:"credential_verification"`
+	RefreshTokenConfig           *RefreshTokenConfig           `mapstructure:"refresh_token"`
+	AccessTokenConfig            *AccessTokenConfig            `mapstructure:"access_token"`
+	SessionConfig                *SessionConfig                `mapstructure:"session"`
+}
+
+type AppConfig struct {
+	Server   *ServerConfig   `mapstructure:"server"`
+	Database *DatabaseConfig `mapstructure:"database"`
+	Hashing  *HashingConfig  `mapstructure:"hashing"`
+	Postgres *PostgresConfig `mapstructure:"postgres"`
+	Mailer   *MailerConfig   `mapstructure:"mailer"`
+	Smtp     *SmtpConfig     `mapstructure:"smtp"`
+	Cache    *CacheConfig    `mapstructure:"cache"`
+	Redis    *RedisConfig    `mapstructure:"redis"`
+	Auth     *AuthConfig     `mapstructure:"auth"`
 }
 
 func LoadConfig() (*AppConfig, error) {
@@ -91,7 +115,15 @@ func LoadConfig() (*AppConfig, error) {
 	_ = viper.BindEnv("redis.url", "REDIS_URL")
 	_ = viper.BindEnv("redis.username", "REDIS_USERNAME")
 	_ = viper.BindEnv("redis.password", "REDIS_PASSWORD")
-	_ = viper.BindEnv("auth.verification_secret", "AUTH_VERIFICATION_SECRET")
+	_ = viper.BindEnv("auth.credential_verification.secret", "AUTH_CREDENTIAL_VERIFICATION_SECRET")
+	_ = viper.BindEnv("auth.credential_verification.lifetime_minutes", "AUTH_CREDENTIAL_VERIFICATION_LIFETIME_MINUTES")
+	_ = viper.BindEnv("auth.refresh_token.secret", "AUTH_REFRESH_TOKEN_SECRET")
+	_ = viper.BindEnv("auth.session.lifetime_hours", "AUTH_SESSION_LIFETIME_HOURS")
+	_ = viper.BindEnv("auth.session.trusted_lifetime_hours", "AUTH_SESSION_TRUSTED_LIFETIME_HOURS")
+	_ = viper.BindEnv("auth.access_token.lifetime_minutes", "AUTH_ACCESS_TOKEN_LIFETIME_MINUTES")
+	_ = viper.BindEnv("auth.access_token.issuer", "AUTH_ACCESS_TOKEN_ISSUER")
+	_ = viper.BindEnv("auth.access_token.private_key", "AUTH_ACCESS_TOKEN_PRIVATE_KEY")
+	_ = viper.BindEnv("auth.access_token.public_key", "AUTH_ACCESS_TOKEN_PUBLIC_KEY")
 
 	// Read the configuration file
 	viper.SetConfigFile("config/config.yaml")

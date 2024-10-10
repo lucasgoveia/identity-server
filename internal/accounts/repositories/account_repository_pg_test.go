@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"identity-server/internal/accounts/domain"
+	domain2 "identity-server/internal/domain"
 	"identity-server/pkg/providers/database"
 	"os"
 	"path/filepath"
@@ -105,10 +105,10 @@ func TestAccountManager_Save(t *testing.T) {
 	t.Run("Successfully save user and identity", func(t *testing.T) {
 		ctx := context.Background()
 		userId := ulid.Make()
-		user := domain.NewUser(userId, "John Doe", nil, time.Now(), time.Now())
+		user := domain2.NewUser(userId, "John Doe", nil, time.Now(), time.Now())
 
 		identityId := ulid.Make()
-		identity := domain.NewEmailIdentity(identityId, userId, "johndoe@example.com", "hashed-password", time.Now(), time.Now())
+		identity := domain2.NewEmailIdentity(identityId, userId, "johndoe@example.com", "hashed-password", time.Now(), time.Now())
 
 		err := accountManager.Save(ctx, user, identity)
 		assert.NoError(t, err, "Saving user and identity should not return an error")
@@ -117,10 +117,10 @@ func TestAccountManager_Save(t *testing.T) {
 	t.Run("Duplicate email", func(t *testing.T) {
 		ctx := context.Background()
 		userId := ulid.Make()
-		user := domain.NewUser(userId, "Jane Doe", nil, time.Now(), time.Now())
+		user := domain2.NewUser(userId, "Jane Doe", nil, time.Now(), time.Now())
 
 		identityId := ulid.Make()
-		identity := domain.NewEmailIdentity(identityId, userId, "johndoe@example.com", "hashed-password", time.Now(), time.Now()) // Duplicate email
+		identity := domain2.NewEmailIdentity(identityId, userId, "johndoe@example.com", "hashed-password", time.Now(), time.Now()) // Duplicate email
 
 		err := accountManager.Save(ctx, user, identity)
 		assert.Error(t, err, "Saving a duplicate email should return an error")
@@ -137,10 +137,10 @@ func TestAccountManager_Save(t *testing.T) {
 		assert.NoError(t, err)
 
 		userId := ulid.Make()
-		user := domain.NewUser(userId, "User With Error", nil, time.Now(), time.Now())
+		user := domain2.NewUser(userId, "User With Error", nil, time.Now(), time.Now())
 
 		identityId := ulid.Make()
-		identity := domain.NewEmailIdentity(identityId, userId, "error@example.com", "hashed-password", time.Now(), time.Now())
+		identity := domain2.NewEmailIdentity(identityId, userId, "error@example.com", "hashed-password", time.Now(), time.Now())
 
 		err = accountManager.Save(ctx, user, identity)
 		assert.Error(t, err, "Inserting user with error should return an error")
@@ -158,10 +158,10 @@ func TestAccountManager_IdentityExists(t *testing.T) {
 		ctx := context.Background()
 		// Create a user and identity first
 		userId := ulid.Make()
-		user := domain.NewUser(userId, "John Doe", nil, time.Now(), time.Now())
+		user := domain2.NewUser(userId, "John Doe", nil, time.Now(), time.Now())
 
 		identityId := ulid.Make()
-		identity := domain.NewEmailIdentity(identityId, userId, "existing@example.com", "hashed-password", time.Now(), time.Now())
+		identity := domain2.NewEmailIdentity(identityId, userId, "existing@example.com", "hashed-password", time.Now(), time.Now())
 
 		err := accountManager.Save(ctx, user, identity)
 		assert.NoError(t, err)

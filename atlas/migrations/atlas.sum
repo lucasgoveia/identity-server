@@ -1,2 +1,5 @@
-h1:weMwgUhGkr5GqiPmKua63ADpiguWdPJxwKK6LlqSGSY=
+h1:knruFOSoKclVLQUJqojpcCJaDatc3JSQs0S0aji7kI8=
 20240916201527_initial.sql h1:FBr4AZh0nTL3ukE9XHLLNCT13UygMv+aoIAb2KiTiik=
+20241010144503_not_opaque_session_id.sql h1:dFia5EwEifb5D4DeAPKfKHFFS/4fMfsllqeK6T8Oy8E=
+20241010152629_remove_device_fingerprint.sql h1:kvZXFWL+lbat71n2FVt7mqU/BV5WpABubwAMIVLlR9s=
+20241010170647_fix_sessions.sql h1:+pOHaHAWjjrC6N2VMB8DVKlr5T16Py6LsxKKJmlSVl0=

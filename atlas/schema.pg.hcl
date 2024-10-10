@@ -125,18 +125,9 @@ table "user_identities" {
 
 table "user_sessions" {
   schema = schema.public
-  column "id" {
-    null = false
-    type = int
-    identity {
-      generated = ALWAYS
-      start     = 0
-      increment = 1
-    }
-  }
   column "session_id" {
     null = false
-    type = varchar(32)
+    type = char(26)
   }
   column "user_id" {
     null = false
@@ -154,31 +145,26 @@ table "user_sessions" {
     null = false
     type = varchar(200)
   }
-  column "device_fingerprint" {
-    null = false
-    type = varchar(128)
-  }
   column "created_at" {
     null = false
     type = timestamp
   }
-  column "ended_at" {
-    null = true
+  column "expires_at" {
+    null = false
     type = timestamp
   }
-  column "session_secret" {
-    null = false
-    type = varchar(256)
+
+  primary_key {
+    columns = [column.session_id]
   }
 
-  index "column.user_id" {
+  index "user_sessions_user_id" {
     columns = [ column.user_id ]
   }
-
-  index "user_sessions_session_id_ended_at_idx" {
-    columns = [column.session_id, column.ended_at]
+  index "user_sessions_session_id_expires_at_idx" {
+    columns = [column.session_id, column.expires_at]
   }
-  index "user_sessions_user_id_session_id_ended_at_idx" {
-    columns = [column.user_id, column.session_id, column.ended_at]
+  index "user_sessions_user_id_session_id_expires_at_idx" {
+    columns = [column.user_id, column.session_id, column.expires_at]
   }
 }
