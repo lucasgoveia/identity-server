@@ -11,4 +11,5 @@ type Cache interface {
 	GetOrSet(ctx context.Context, key string, fetch func() interface{}, ttl time.Duration) (interface{}, error)
 	Remove(ctx context.Context, key string) error
 	Exists(ctx context.Context, key string) bool
+	GetAndRemove(ctx context.Context, key string) (interface{}, bool)
 }

@@ -35,7 +35,7 @@ func VerifyIdentityAuth(tokenMge *security.TokenManager) echo.MiddlewareFunc {
 			// Set user id and identity id in context
 			c.Set("user", LoggedInUser{
 				UserId:     ulid.MustParse(claims[security.ClaimSubject].(string)),
-				IdentityId: ulid.MustParse(claims[security.ClaimIdentityId].(string)),
+				IdentityId: ulid.MustParse(claims[security.ClaimCredentialId].(string)),
 			})
 
 			return next(c)

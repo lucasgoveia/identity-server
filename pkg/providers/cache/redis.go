@@ -24,6 +24,22 @@ func (i *RedisCache) Get(ctx context.Context, key string) (interface{}, bool) {
 	return val, true
 }
 
+func (i *RedisCache) GetAndRemove(ctx context.Context, key string) (interface{}, bool) {
+	val, exists := i.Get(ctx, key)
+
+	if !exists {
+		return nil, false
+	}
+
+	err := i.Remove(ctx, key)
+
+	if err != nil {
+		return nil, false
+	}
+
+	return val, true
+}
+
 func (i *RedisCache) Exists(ctx context.Context, key string) bool {
 	res, err := i.cache.Exists(ctx, key).Result()
 	if err != nil {

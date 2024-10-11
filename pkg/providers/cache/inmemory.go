@@ -20,6 +20,22 @@ func (i *InMemoryCache) Get(_ context.Context, key string) (interface{}, bool) {
 	return i.cache.Get(key)
 }
 
+func (i *InMemoryCache) GetAndRemove(ctx context.Context, key string) (interface{}, bool) {
+	val, exists := i.Get(ctx, key)
+
+	if !exists {
+		return nil, false
+	}
+
+	err := i.Remove(ctx, key)
+
+	if err != nil {
+		return nil, false
+	}
+
+	return val, true
+}
+
 func (i *InMemoryCache) Exists(_ context.Context, key string) bool {
 	_, found := i.cache.Get(key)
 	return found

@@ -25,6 +25,7 @@ import (
 	"identity-server/internal/accounts/messages/commands"
 	accServices "identity-server/internal/accounts/services"
 	"identity-server/internal/auth/handlers/login"
+	"identity-server/internal/auth/handlers/token/exchange"
 	authServices "identity-server/internal/auth/services"
 	"identity-server/pkg/middlewares"
 	"identity-server/pkg/providers"
@@ -131,7 +132,9 @@ func main() {
 	sessionRepo, err := providers.CreateSessionRepository(db)
 	identityRepo, err := providers.CreateIdentityRepository(db)
 
-	authService := authServices.NewAuthService(logger, tm, sessionRepo, timeProvider, appConfig.Auth.SessionConfig)
+	pcke := authServices.NewPCKEManager(secureKeyGen, cache)
+
+	authService := authServices.NewAuthService(logger, tm, sessionRepo, timeProvider, appConfig.Auth.SessionConfig, pcke)
 
 	consumer := consumers.NewSendVerificationEmailConsumer(identityVerificationManager, logger, mailer)
 	bus.RegisterConsumer(reflect.TypeOf(commands.SendVerificationEmail{}), consumer.Handle)
@@ -141,7 +144,7 @@ func main() {
 	// TODO: Change: instead of using hasher directly, create an wrapper for password hashing
 	// because, for example, totp secret does not have the same security requirements as password
 	e.POST("/sign-up/email", signup.SignUp(accountManager, timeProvider, hasher, bus, tm))
-
+	e.POST("token/exchange", exchange.Token(authService))
 	e.POST("login/email", login.Login(identityRepo, hasher, timeProvider, authService))
 
 	verificationRoutes := e.Group("/verify")

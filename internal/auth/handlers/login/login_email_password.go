@@ -16,19 +16,18 @@ type EmailPasswordLogin struct {
 }
 
 type Response struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	Code string `json:"code"`
 }
 
 func Login(repo repositories.IdentityRepository, hash hashing.Hasher, timeProvider timeProvider.Provider, authServ *services.AuthService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		//codeChallenge := c.QueryParam("code_challenge")
-		//codeVerifier := c.QueryParam("code_verifier")
-		//redirectUri := c.QueryParam("redirect_uri")
-		//
-		//if codeChallenge == "" || codeVerifier == "" || redirectUri == "" {
-		//	return c.JSON(http.StatusBadRequest, "Missing required parameters")
-		//}
+		codeChallenge := c.QueryParam("code_challenge")
+		codeChallengeMethod := c.QueryParam("code_challenge_method")
+		redirectUri := c.QueryParam("redirect_uri")
+
+		if codeChallenge == "" || codeChallengeMethod == "" || redirectUri == "" {
+			return c.JSON(http.StatusBadRequest, "Missing required parameters")
+		}
 
 		var req EmailPasswordLogin
 		if err := c.Bind(&req); err != nil {
@@ -58,17 +57,13 @@ func Login(repo repositories.IdentityRepository, hash hashing.Hasher, timeProvid
 			return c.JSON(http.StatusUnauthorized, "Invalid email or password")
 		}
 
-		device := services.IdentifyDevice(c.Request())
-		aud := c.Request().Host
-
-		res, err := authServ.Authenticate(c.Request().Context(), info.UserId, info.IdentityId, device, req.RememberMe, aud)
+		code, err := authServ.InitiateAuthentication(c.Request().Context(), info.UserId, info.IdentityId, req.RememberMe, codeChallenge, codeChallengeMethod, redirectUri)
 		if err != nil {
 			return err
 		}
 
 		return c.JSON(http.StatusOK, Response{
-			AccessToken:  res.AccessToken,
-			RefreshToken: res.RefreshToken,
+			Code: code,
 		})
 	}
 }
