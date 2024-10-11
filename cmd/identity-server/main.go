@@ -23,13 +23,10 @@ import (
 	"identity-server/internal/accounts/handlers/identity_verification"
 	"identity-server/internal/accounts/handlers/signup"
 	"identity-server/internal/accounts/messages/commands"
-	accServices "identity-server/internal/accounts/services"
 	"identity-server/internal/auth/handlers/login"
 	"identity-server/internal/auth/handlers/token/exchange"
-	authServices "identity-server/internal/auth/services"
 	"identity-server/pkg/middlewares"
 	"identity-server/pkg/providers"
-	"identity-server/pkg/security"
 	"log"
 	"os"
 	"os/signal"
@@ -42,22 +39,18 @@ var serviceName = semconv.ServiceNameKey.String("identity-service")
 func main() {
 	e := echo.New()
 
-	// todo: we should probably not pass around zap, maybe create a wrapper with less methods
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		panic(err)
-	}
-	defer func() {
-		if err := logger.Sync(); err != nil {
-			log.Fatalf("failed to flush logs on shutdown %s", err)
-		}
-	}()
+	appConfig, err := config.LoadConfig()
 
 	if err := godotenv.Load(); err != nil {
 		e.Logger.Debug("Error loading .env file: %v", err)
 	}
 
-	appConfig, err := config.LoadConfig()
+	// todo: we should probably not pass around zap, maybe create a wrapper with less methods
+	c := providers.CreateDependencyContainer(appConfig)
+
+	defer func() {
+		c.Destroy()
+	}()
 
 	conn, _ := initConn()
 
@@ -72,7 +65,7 @@ func main() {
 		),
 	)
 	if err != nil {
-		logger.Error("error while creating resource", zap.Error(err))
+		c.Logger.Error("error while creating resource", zap.Error(err))
 	}
 	shutdownTracerProvider, err := initTracerProvider(ctx, res, conn)
 	defer func() {
@@ -81,12 +74,12 @@ func main() {
 		}
 	}()
 	if err != nil {
-		logger.Error("error while initializing tracing provider", zap.Error(err))
+		c.Logger.Error("error while initializing tracing provider", zap.Error(err))
 	}
 
 	shutdownMeterProvider, err := initMeterProvider(ctx, res, conn)
 	if err != nil {
-		logger.Error("error while initializing metric provider", zap.Error(err))
+		c.Logger.Error("error while initializing metric provider", zap.Error(err))
 	}
 	defer func() {
 		if err := shutdownMeterProvider(ctx); err != nil {
@@ -97,66 +90,27 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
-	db, err := providers.CreateDatabase(appConfig)
+	consumer := consumers.NewSendVerificationEmailConsumer(c.IdentityVerificationManager, c.Logger, c.Mailer)
+	c.Bus.RegisterConsumer(reflect.TypeOf(commands.SendVerificationEmail{}), consumer.Handle)
 
-	defer func() {
-		if err := db.Close(); err != nil {
-			log.Fatalf("Failed to close database: %v", err)
-		}
-	}()
-
-	if err != nil {
-		log.Fatalf("Failed to create database: %v", err)
-	}
-
-	accountManager, err := providers.CreateAccountRepository(db)
-	timeProvider := providers.CreateDefaultTimeProvider()
-	hasher, err := providers.CreateHasher(appConfig)
-
-	bus := providers.CreateMessageBus(logger)
-
-	mailer := providers.CreateMailSender(appConfig, logger)
-
-	cache, err := providers.CreateCache(appConfig)
-
-	secureKeyGen := security.NewSecureKeyGenerator()
-
-	otpGen := security.NewOTPGenerator(secureKeyGen)
-
-	identityVerificationManager := accServices.NewIdentityVerificationManager(otpGen, cache, hasher, logger)
-
-	rsaHolder, err := security.NewRSAKeyHolder(appConfig.Auth.AccessTokenConfig.PrivateKey, appConfig.Auth.AccessTokenConfig.PublicKey)
-
-	tm := security.NewTokenManager(appConfig.Auth, timeProvider, logger, cache, rsaHolder)
-
-	sessionRepo, err := providers.CreateSessionRepository(db)
-	identityRepo, err := providers.CreateIdentityRepository(db)
-
-	pcke := authServices.NewPCKEManager(secureKeyGen, cache)
-
-	authService := authServices.NewAuthService(logger, tm, sessionRepo, timeProvider, appConfig.Auth.SessionConfig, pcke)
-
-	consumer := consumers.NewSendVerificationEmailConsumer(identityVerificationManager, logger, mailer)
-	bus.RegisterConsumer(reflect.TypeOf(commands.SendVerificationEmail{}), consumer.Handle)
-
-	bus.Start()
+	c.Bus.Start()
 
 	// TODO: Change: instead of using hasher directly, create an wrapper for password hashing
 	// because, for example, totp secret does not have the same security requirements as password
-	e.POST("/sign-up/email", signup.SignUp(accountManager, timeProvider, hasher, bus, tm))
-	e.POST("token/exchange", exchange.Token(authService))
-	e.POST("login/email", login.Login(identityRepo, hasher, timeProvider, authService))
+	e.POST("/sign-up/email", signup.SignUp(c.AccountRepo, c.TimeProvider, c.Hasher, c.Bus, c.TokenManager))
+	e.POST("token/exchange", exchange.Token(c.AuthService))
+	e.POST("login/email", login.Login(c.IdentityRepo, c.Hasher, c.TimeProvider, c.AuthService))
 
 	verificationRoutes := e.Group("/verify")
 
-	verificationRoutes.Use(middlewares.VerifyIdentityAuth(tm))
+	verificationRoutes.Use(middlewares.VerifyIdentityAuth(c.TokenManager))
 
-	verificationRoutes.POST("/email", identity_verification.VerifyEmail(accountManager, tm, identityVerificationManager))
+	verificationRoutes.POST("/email", identity_verification.VerifyEmail(c.AccountRepo, c.TokenManager, c.IdentityVerificationManager))
 
 	go func() {
 		// Start the server
 		if err := e.Start(":1323"); err != nil {
-			logger.Sugar().Fatalf("Shutting down the server: %v", err)
+			c.Logger.Sugar().Fatalf("Shutting down the server: %v", err)
 		}
 	}()
 
@@ -164,9 +118,6 @@ func main() {
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
 	<-signalChannel
-
-	// Stop the server and clean up
-	bus.Stop()
 }
 
 func initConn() (*grpc.ClientConn, error) {

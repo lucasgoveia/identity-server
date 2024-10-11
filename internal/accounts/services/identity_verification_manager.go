@@ -21,8 +21,8 @@ type IdentityVerificationManager struct {
 	config *config.CredentialVerificationConfig
 }
 
-func NewIdentityVerificationManager(otpGenerator *security.OTPGenerator, cache cache.Cache, hasher hashing.Hasher, logger *zap.Logger) *IdentityVerificationManager {
-	return &IdentityVerificationManager{otpGen: otpGenerator, cache: cache, hasher: hasher, logger: logger}
+func NewIdentityVerificationManager(otpGenerator *security.OTPGenerator, cache cache.Cache, hasher hashing.Hasher, logger *zap.Logger, config *config.CredentialVerificationConfig) *IdentityVerificationManager {
+	return &IdentityVerificationManager{otpGen: otpGenerator, cache: cache, hasher: hasher, logger: logger, config: config}
 }
 
 func buildOtpCacheKey(userId ulid.ULID, identityId ulid.ULID) string {
