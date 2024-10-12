@@ -19,13 +19,13 @@ func SetupTestPostgresDb(t *testing.T) (*sql.DB, func()) {
 	// Start a PostgreSQL container using Testcontainers
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:latest",
-		ExposedPorts: []string{"5431/tcp"},
+		ExposedPorts: []string{"5432/tcp"},
 		Env: map[string]string{
 			"POSTGRES_USER":     "test",
 			"POSTGRES_PASSWORD": "test",
 			"POSTGRES_DB":       "testdb",
 		},
-		WaitingFor: wait.ForListeningPort("5431/tcp").WithStartupTimeout(30 * time.Second),
+		WaitingFor: wait.ForListeningPort("5432/tcp").WithStartupTimeout(30 * time.Second),
 	}
 	postgresContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -36,7 +36,7 @@ func SetupTestPostgresDb(t *testing.T) (*sql.DB, func()) {
 
 	host, err := postgresContainer.Host(ctx)
 	assert.NoError(t, err)
-	port, err := postgresContainer.MappedPort(ctx, "5431")
+	port, err := postgresContainer.MappedPort(ctx, "5432")
 	assert.NoError(t, err)
 
 	dsn := fmt.Sprintf("postgres://test:test@%s:%s/testdb?sslmode=disable", host, port.Port())
