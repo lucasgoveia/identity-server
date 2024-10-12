@@ -1,57 +1,70 @@
-package setup
+package containers
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/stretchr/testify/assert"
+	"github.com/labstack/gommon/log"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"os"
 	"path/filepath"
-	"testing"
 	"time"
 )
 
-func SetupTestPostgresDb(t *testing.T) (*sql.DB, func()) {
+func SetupTestPostgresDb() (string, func(), error) {
 	ctx := context.Background()
 
 	// Start a PostgreSQL container using Testcontainers
-	req := testcontainers.ContainerRequest{
-		Image:        "postgres:latest",
-		ExposedPorts: []string{"5432/tcp"},
-		Env: map[string]string{
-			"POSTGRES_USER":     "test",
-			"POSTGRES_PASSWORD": "test",
-			"POSTGRES_DB":       "testdb",
-		},
-		WaitingFor: wait.ForListeningPort("5432/tcp").WithStartupTimeout(30 * time.Second),
+	postgresContainer, err := postgres.Run(ctx, "postgres:latest",
+		postgres.WithDatabase("testdb"),
+		postgres.WithUsername("test"),
+		postgres.WithPassword("test"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(5*time.Second)))
+
+	if err != nil {
+		return "", nil, err
 	}
-	postgresContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
 
-	assert.NoError(t, err)
+	teardown := func() {
+		if err := postgresContainer.Terminate(ctx); err != nil {
+			log.Errorf("Failed to terminate container: %s", err)
+		}
+	}
 
-	host, err := postgresContainer.Host(ctx)
-	assert.NoError(t, err)
-	port, err := postgresContainer.MappedPort(ctx, "5432")
-	assert.NoError(t, err)
+	dsn, err := postgresContainer.ConnectionString(ctx, "sslmode=disable")
 
-	dsn := fmt.Sprintf("postgres://test:test@%s:%s/testdb?sslmode=disable", host, port.Port())
+	if err != nil {
+		log.Error("failed to get conn string")
+		return "", teardown, err
+	}
+
 	db, err := sql.Open("postgres", dsn)
-	assert.NoError(t, err)
+
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Error("Failed to close db connection")
+		}
+	}()
+
+	if err != nil {
+		return "", teardown, err
+	}
 
 	// Run schema migrations here to setup the database schema for testing
 	err = runMigrations(db, "../../../atlas/migrations")
-	assert.NoError(t, err)
+
+	if err != nil {
+		return "", teardown, err
+	}
 
 	// Return a teardown function to stop the container
-	return db, func() {
-		_ = db.Close()
-		_ = postgresContainer.Terminate(ctx)
-	}
+	return dsn, teardown, nil
 }
 
 func runMigrations(db *sql.DB, migrationsDir string) error {

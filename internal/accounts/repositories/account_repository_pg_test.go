@@ -2,10 +2,12 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"github.com/labstack/gommon/log"
 	domain2 "identity-server/internal/domain"
 	"identity-server/pkg/providers/database"
-	"identity-server/tests/setup"
+	"identity-server/tests/setup/containers"
 	"testing"
 	"time"
 
@@ -14,8 +16,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func setupDb(t *testing.T) (*sql.DB, func()) {
+	dbConn, teardown, err := containers.SetupTestPostgresDb()
+
+	assert.NoError(t, err)
+
+	db, err := sql.Open("postgres", dbConn)
+
+	assert.NoError(t, err)
+
+	return db, func() {
+		err := db.Close()
+		if err != nil {
+			log.Error("Failed to close db connection")
+		}
+		teardown()
+	}
+}
+
 func TestAccountManager_Save(t *testing.T) {
-	db, teardown := setup.SetupTestPostgresDb(t)
+	db, teardown := setupDb(t)
 	defer teardown()
 
 	accountManager := NewPostgresAccountRepository(&database.Db{Db: db})
@@ -67,7 +87,7 @@ func TestAccountManager_Save(t *testing.T) {
 }
 
 func TestAccountManager_IdentityExists(t *testing.T) {
-	db, teardown := setup.SetupTestPostgresDb(t)
+	db, teardown := setupDb(t)
 	defer teardown()
 
 	accountManager := NewPostgresAccountRepository(&database.Db{Db: db})
