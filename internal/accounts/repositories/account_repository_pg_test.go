@@ -22,8 +22,14 @@ func setupDb(t *testing.T) (*sql.DB, func()) {
 	assert.NoError(t, err)
 
 	db, err := sql.Open("postgres", dbConn)
-
 	assert.NoError(t, err)
+
+	err = containers.RunMigrations(db, "../../../atlas/migrations")
+
+	if err != nil {
+		teardown()
+		log.Fatalf("failed to migrate test db: %s", err)
+	}
 
 	return db, func() {
 		err := db.Close()

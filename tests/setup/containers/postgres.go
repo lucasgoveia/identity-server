@@ -43,31 +43,11 @@ func SetupTestPostgresDb() (string, func(), error) {
 		return "", teardown, err
 	}
 
-	db, err := sql.Open("postgres", dsn)
-
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			log.Error("Failed to close db connection")
-		}
-	}()
-
-	if err != nil {
-		return "", teardown, err
-	}
-
-	// Run schema migrations here to setup the database schema for testing
-	err = runMigrations(db, "../../../atlas/migrations")
-
-	if err != nil {
-		return "", teardown, err
-	}
-
 	// Return a teardown function to stop the container
 	return dsn, teardown, nil
 }
 
-func runMigrations(db *sql.DB, migrationsDir string) error {
+func RunMigrations(db *sql.DB, migrationsDir string) error {
 	files, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		return fmt.Errorf("failed to read migrations directory: %v", err)
